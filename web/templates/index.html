@@ -31,17 +31,9 @@
                     <span class="status-text">LangSmith: Checking...</span>
                     <a id="langsmith-link" href="https://smith.langchain.com" target="_blank" rel="noopener" class="external-link" title="Open LangSmith Dashboard">↗</a>
                 </div>
-                <div id="llm-badge" class="status-pill online" title="LLM Provider & Model">
-                    <span class="status-dot"></span>
-                    <span id="llm-status-text" class="status-text">LLM: Google Gemini</span>
-                </div>
-                <div class="status-pill sandbox-pill" title="Execution Sandbox">
-                    <span class="pill-icon">🛡️</span>
-                    <span>Sandbox: Pytest Subprocess</span>
-                </div>
-                <a href="/course" target="_blank" class="status-pill" style="text-decoration: none; color: inherit; border-color: rgba(99, 102, 241, 0.4); cursor: pointer;" title="Open Interactive Educational Course">
+                <a href="/course" target="_blank" class="status-pill course-pill" title="Open Interactive Educational Course">
                     <span class="pill-icon">🎓</span>
-                    <span>Interactive Course</span> <span style="font-size: 0.75rem; opacity: 0.7;">↗</span>
+                    <span>Interactive Course</span> <span class="external-icon" style="font-size: 0.75rem; opacity: 0.7;">↗</span>
                 </a>
                 <div id="agent-state-pill" class="status-pill state-idle">
                     <span class="pill-pulse"></span>
@@ -195,23 +187,28 @@
                         <span class="btn-icon">🚀</span>
                         <span class="btn-text">Launch Autonomous Workflow</span>
                     </button>
-
-                    <!-- Run Benchmark CTA -->
-                    <button type="button" id="btn-run-benchmark" class="btn-secondary benchmark-btn" style="width: 100%; margin-top: 10px;">
-                        <span>🔬 Run Empirical Benchmark (Baseline vs Multi-Agent)</span>
-                    </button>
                 </form>
 
-                <!-- System Highlights Card -->
-                <div class="info-card">
-                    <div class="info-card-title">💡 Why 5 Specialized Agents?</div>
-                    <p class="info-explain">
-                        <strong>1. Manager:</strong> Decomposes goals & routes decisions.<br>
-                        <strong>2. Coder:</strong> Synthesizes surgical implementations.<br>
-                        <strong>3. Test-Gen:</strong> Autonomously creates edge-case tests.<br>
-                        <strong>4. Debugger:</strong> Isolates root causes via stack traces.<br>
-                        <strong>5. Reviewer:</strong> Adversarial quality & security gate.
-                    </p>
+                <!-- How It Works Guide -->
+                <div class="user-guide-card">
+                    <div class="guide-header">
+                        <span class="guide-icon">💡</span>
+                        <span class="guide-title">How It Works</span>
+                    </div>
+                    <div class="guide-steps">
+                        <div class="guide-step">
+                            <span class="step-num">1</span>
+                            <div class="step-content"><strong>Select Repo</strong>: Local path, GitHub URL, ZIP, or Greenfield</div>
+                        </div>
+                        <div class="guide-step">
+                            <span class="step-num">2</span>
+                            <div class="step-content"><strong>Define Task</strong>: Type a requirement or choose a preset</div>
+                        </div>
+                        <div class="guide-step">
+                            <span class="step-num">3</span>
+                            <div class="step-content"><strong>Launch</strong>: Watch the 5-agent pipeline synthesize, test & verify code</div>
+                        </div>
+                    </div>
                 </div>
             </aside>
 
@@ -315,10 +312,7 @@
                             <span>🧪 Sandbox & Tests</span>
                         </button>
                         <button type="button" class="tab-btn" data-tab="tab-report">
-                            <span>📋 Final Report</span>
-                        </button>
-                        <button type="button" class="tab-btn" data-tab="tab-benchmark">
-                            <span>🔬 Baseline vs Multi-Agent</span>
+                            <span>📋 Final Report & Diffs</span>
                         </button>
                     </nav>
 
@@ -375,21 +369,6 @@
                                     <div class="empty-icon">📊</div>
                                     <h3>Verification Report Pending</h3>
                                     <p>The report summarizing all changed files, test executions, and diffs will appear here once the agent completes.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tab 5: Benchmark Matrix -->
-                        <div id="tab-benchmark" class="tab-pane">
-                            <div class="benchmark-container">
-                                <div class="benchmark-header">
-                                    <h3>🔬 Empirical Benchmark: Single-Agent Baseline vs 5-Agent Multi-Agent</h3>
-                                    <p class="benchmark-sub">Measures why 5 specialized agents are necessary and how they improve task success over the single-agent baseline.</p>
-                                </div>
-                                <div id="benchmark-results-table">
-                                    <div class="empty-state">
-                                        <p>Click <strong>"🔬 Run Empirical Benchmark"</strong> in the left panel to execute the side-by-side comparative evaluation.</p>
-                                    </div>
                                 </div>
                             </div>
                         </div>

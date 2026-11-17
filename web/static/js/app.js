@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnUseMock = document.getElementById("btn-use-mock");
     const btnClearLogs = document.getElementById("btn-clear-logs");
     const btnRefreshSymbols = document.getElementById("btn-refresh-symbols");
-    const btnRunBenchmark = document.getElementById("btn-run-benchmark");
 
     const archModeSelect = document.getElementById("arch-mode");
     const repoPathInput = document.getElementById("repo-path");
@@ -33,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const pytestOutput = document.getElementById("pytest-output");
     const testStatusBanner = document.getElementById("test-status-banner");
     const reportContainer = document.getElementById("report-container");
-    const benchmarkResultsTable = document.getElementById("benchmark-results-table");
 
     // Drawer Elements
     const nodeDrawer = document.getElementById("node-inspector-drawer");
@@ -251,32 +249,6 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 langsmithBadge.className = "status-pill offline";
                 langsmithBadge.querySelector(".status-text").textContent = "LangSmith: Offline (Local)";
-            }
-
-            // LLM Provider Status
-            const llmBadge = document.getElementById("llm-badge");
-            const llmStatusText = document.getElementById("llm-status-text");
-            if (llmBadge && llmStatusText && data.llm) {
-                if (data.llm.connected) {
-                    llmBadge.className = "status-pill online";
-                    llmStatusText.textContent = `LLM: ${data.llm.provider} (${data.llm.model})`;
-                } else {
-                    llmBadge.className = "status-pill offline";
-                    llmStatusText.textContent = `LLM: ${data.llm.provider}`;
-                }
-            }
-
-            // Sandbox Security Status
-            const sandboxPill = document.querySelector(".sandbox-pill");
-            if (sandboxPill && data.sandbox) {
-                const isolationName = data.sandbox.isolation_level === "microvm"
-                    ? "MicroVM (gVisor)"
-                    : (data.sandbox.isolation_level === "container"
-                        ? "Container (Non-root)"
-                        : "Hardened OS (POSIX rlimits)");
-                const labelSpan = sandboxPill.querySelector("span:last-child");
-                if (labelSpan) labelSpan.textContent = `Sandbox: ${isolationName}`;
-                sandboxPill.title = `Isolation: ${data.sandbox.isolation_level} | User: ${data.sandbox.non_root_user} | Net: ${data.sandbox.network_control} | RAM: ${data.sandbox.memory_limit} | PIDs: ${data.sandbox.pids_limit}`;
             }
 
             if (data.default_repo && !repoPathInput.value) {
@@ -562,78 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ==========================================
-    // 6. Empirical Benchmark Runner Trigger
-    // ==========================================
-    btnRunBenchmark.addEventListener("click", async () => {
-        switchTab("tab-benchmark");
-        benchmarkResultsTable.innerHTML = `
-            <div style="padding: 2rem; text-align: center; color: var(--color-cyan);">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚙️</div>
-                <h4>Executing Live Benchmark Evaluation...</h4>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">Running identical tasks through Single-Agent Baseline and 5-Agent Multi-Agent system to measure task success, test synthesis, and defect prevention.</p>
-            </div>
-        `;
-
-        try {
-            const res = await fetch("/api/benchmark");
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-
-            benchmarkResultsTable.innerHTML = `
-                <table class="benchmark-table">
-                    <thead>
-                        <tr>
-                            <th>Evaluation Metric</th>
-                            <th>Single-Agent Baseline</th>
-                            <th>5-Agent Multi-Agent Orchestration</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Task Pass & Verification</strong></td>
-                            <td><span class="${data.baseline.passed ? 'benchmark-badge-pass' : 'benchmark-badge-fail'}">${data.baseline.passed ? 'PASSED' : 'FAILED'}</span></td>
-                            <td><span class="${data.multi_agent.passed ? 'benchmark-badge-pass' : 'benchmark-badge-fail'}">${data.multi_agent.passed ? 'VERIFIED PASSED' : 'FAILED'}</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Autonomous Test Generation</strong></td>
-                            <td>${data.baseline.tests_generated} new tests</td>
-                            <td><strong>${data.multi_agent.tests_generated} test cases</strong> (<span style="color:#34d399;">+100% higher</span>)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Boundary & Edge Cases Covered</strong></td>
-                            <td>${data.baseline.edge_cases_covered} (Blind spots)</td>
-                            <td><strong>${data.multi_agent.edge_cases_covered} edge guards</strong> (zero-div, negative roots)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Independent Adversarial Audit</strong></td>
-                            <td>${data.baseline.review_audit_score}</td>
-                            <td><strong>${data.multi_agent.review_audit_score}</strong></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Root-Cause Traceback Diagnosis</strong></td>
-                            <td>${data.baseline.root_cause_diagnoses} (Raw string retry)</td>
-                            <td><strong>${data.multi_agent.root_cause_diagnoses} (AST Defect Isolation)</strong></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Execution Duration</strong></td>
-                            <td>${data.baseline.latency_seconds}s</td>
-                            <td>${data.multi_agent.latency_seconds}s</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="benchmark-takeaway-box" style="margin-top: 1.25rem;">
-                    <strong>💡 Empirical Proof:</strong> ${escapeHtml(data.key_takeaway)}
-                </div>
-            `;
-            addTerminalLog("success", "Empirical benchmark evaluation completed successfully.");
-        } catch (err) {
-            benchmarkResultsTable.innerHTML = `<div class="empty-state" style="color: #f87171;">Benchmark failed: ${escapeHtml(err.message)}</div>`;
-            addTerminalLog("error", `Benchmark failed: ${err.message}`);
-        }
-    });
-
-    // ==========================================
-    // 7. Streaming Agent Execution (SSE)
+    // 6. Streaming Agent Execution (SSE)
     // ==========================================
     btnLaunch.addEventListener("click", async () => {
         if (isRunning) return;
