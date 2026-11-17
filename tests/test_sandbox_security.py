@@ -311,37 +311,65 @@ def test_trusted_repository_allows_tier4_fallback_when_env_enabled(monkeypatch):
 
 
 def test_repository_spec_trust_level_auto_classification():
-    """Verify that WorkspaceSpec automatically derives trust_level from source_type."""
+    """Verify that WorkspaceSpec enforces Zero-Trust provenance-based classification.
+
+    Location != Provenance. A local path can be a cloned untrusted repo.
+    Therefore, all external code (GitHub, ZIP, Local Path) defaults to UNTRUSTED.
+    Only internal greenfield scaffolding or explicit operator attestation grants TRUSTED.
+    """
     from agent.repository.manager import WorkspaceSpec, WorkspaceSourceType
 
-    # Remote GitHub URL -> UNTRUSTED
+    # Remote GitHub URL -> UNTRUSTED by default
     gh_spec = WorkspaceSpec(
         source_type=WorkspaceSourceType.GITHUB,
         github_url="https://github.com/example/repo.git",
     )
     assert gh_spec.trust_level == "untrusted"
 
-    # Uploaded ZIP -> UNTRUSTED
+    # Uploaded ZIP -> UNTRUSTED by default
     zip_spec = WorkspaceSpec(
         source_type=WorkspaceSourceType.ZIP,
         zip_bytes=b"PK...",
     )
     assert zip_spec.trust_level == "untrusted"
 
-    # Local Path -> TRUSTED by default
-    local_spec = WorkspaceSpec(
+    # Zero-Trust Default: Local Path WITHOUT attestation -> UNTRUSTED
+    local_untrusted_spec = WorkspaceSpec(
         source_type=WorkspaceSourceType.LOCAL,
-        local_path="/path/to/local/repo",
+        local_path="/path/to/downloaded/third_party_repo",
     )
-    assert local_spec.trust_level == "trusted"
+    assert local_untrusted_spec.trust_level == "untrusted"
 
-    # Explicit override respected
-    untrusted_local = WorkspaceSpec(
+    # Local Path WITH explicit operator attestation -> TRUSTED
+    local_attested_spec = WorkspaceSpec(
         source_type=WorkspaceSourceType.LOCAL,
-        local_path="/path/to/downloaded/repo",
+        local_path="/path/to/vetted/internal_repo",
+        operator_attestation=True,
+    )
+    assert local_attested_spec.trust_level == "trusted"
+
+    # Greenfield Scaffold (internally generated empty project) -> TRUSTED by origin
+    greenfield_spec = WorkspaceSpec(
+        source_type=WorkspaceSourceType.GREENFIELD,
+        project_name="fresh_agent_project",
+    )
+    assert greenfield_spec.trust_level == "trusted"
+
+    # Explicit override directly setting trust_level="trusted" is respected
+    trusted_override = WorkspaceSpec(
+        source_type=WorkspaceSourceType.LOCAL,
+        local_path="/path/to/repo",
+        trust_level="trusted",
+    )
+    assert trusted_override.trust_level == "trusted"
+
+    # Explicit override directly setting trust_level="untrusted" on greenfield is respected
+    untrusted_override = WorkspaceSpec(
+        source_type=WorkspaceSourceType.GREENFIELD,
+        project_name="fresh_agent_project",
         trust_level="untrusted",
     )
-    assert untrusted_local.trust_level == "untrusted"
+    assert untrusted_override.trust_level == "untrusted"
 
 
 def test_production_environment_strictly_blocks_fallback_even_with_env_override(monkeypatch):

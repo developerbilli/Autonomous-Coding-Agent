@@ -42,6 +42,7 @@ def run_agent_workflow(
     demo_mode: bool = False,
     thread_id: Optional[str] = None,
     resume: bool = False,
+    trust_level: Optional[str] = None,
 ):
     checkpointer = get_sqlite_checkpointer()
     base_thread = thread_id or generate_stable_thread_id(repo_path, task)
@@ -56,6 +57,7 @@ def run_agent_workflow(
     print(" 🤖 Autonomous AI Coding Agent (LangGraph + LangSmith)")
     print(f" Architecture Mode: {mode.upper()}")
     print(f" Target Repository: {repo_path}")
+    print(f" Trust Level: {trust_level.upper() if trust_level else 'UNTRUSTED (Zero-Trust Default)'}")
     print(f" Task: {task}")
     print(f" Thread ID: {stable_thread} {'(Resuming from Checkpoint)' if is_resuming else '(Fresh Run)'}")
     print("=======================================================\n")
@@ -123,6 +125,7 @@ def run_agent_workflow(
             "status": "exploring",
             "demo_mode": demo_mode,
             "architecture_mode": "multi_agent",
+            "repo_trust_level": trust_level,
             "thread_id": stable_thread,
         }
         final_state = app.invoke(initial_state, config=config)
@@ -154,6 +157,7 @@ if __name__ == "__main__":
     parser.add_argument("--token", type=str, default=None, help="GitHub token for private repository access")
     parser.add_argument("--isolate", action="store_true", help="Run in an isolated copy-on-write workspace snapshot")
     parser.add_argument("--project-name", type=str, default=None, help="Project name for greenfield creation")
+    parser.add_argument("--trusted", "--operator-attestation", dest="operator_attestation", action="store_true", help="Explicit operator sign-off attesting that repository code is vetted and trusted (defaults to False / Zero-Trust)")
 
     # Workflow Options
     parser.add_argument("--task", type=str, default="Complete Calculator implementation: add division with zero check, power, square root, and factorial", help="Task description")
@@ -186,11 +190,13 @@ if __name__ == "__main__":
         local_path=args.repo,
         project_name=args.project_name,
         isolate_local_copy=args.isolate,
+        operator_attestation=args.operator_attestation,
     )
     print(f"📦 Preparing workspace (Source: {args.source.upper()})...")
     workspace_path = repo_mgr.prepare_workspace(task_id, spec)
     resolved_repo = str(workspace_path.resolve())
-    print(f"📁 Workspace ready at: {resolved_repo}\n")
+    print(f"📁 Workspace ready at: {resolved_repo}")
+    print(f"🔒 Security Posture: Trust Level = '{spec.trust_level.upper()}' (Operator Attestation: {spec.operator_attestation})\n")
 
     run_agent_workflow(
         repo_path=resolved_repo,
@@ -201,4 +207,5 @@ if __name__ == "__main__":
         demo_mode=args.demo,
         thread_id=task_id,
         resume=args.resume,
+        trust_level=spec.trust_level,
     )

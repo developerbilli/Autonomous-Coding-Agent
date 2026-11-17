@@ -83,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const githubBranchInput = document.getElementById("github-branch");
     const githubTokenInput = document.getElementById("github-token");
     const isolateLocalCheck = document.getElementById("isolate-local-check");
+    const operatorAttestationCheck = document.getElementById("operator-attestation-check");
     const zipFileInput = document.getElementById("zip-file");
     const zipProjectNameInput = document.getElementById("zip-project-name");
     const greenfieldNameInput = document.getElementById("greenfield-name");
@@ -718,6 +719,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     zip_base64: zipBase64,
                     project_name: projectName,
                     isolate_local_copy: isolateLocal,
+                    operator_attestation: operatorAttestationCheck ? operatorAttestationCheck.checked : false,
                     task: task,
                     max_iterations: maxIter,
                     task_type: taskType,

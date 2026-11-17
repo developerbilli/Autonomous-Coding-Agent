@@ -95,6 +95,8 @@ class RunRequest(BaseModel):
     zip_base64: Optional[str] = None
     project_name: Optional[str] = None
     isolate_local_copy: bool = False
+    operator_attestation: bool = False
+    trust_level: Optional[str] = None
 
     # Execution Parameters
     repo_path: Optional[str] = "calculator_repo"
@@ -369,9 +371,12 @@ async def event_stream_generator(req: RunRequest) -> AsyncGenerator[str, None]:
             zip_base64=req.zip_base64,
             project_name=req.project_name,
             isolate_local_copy=req.isolate_local_copy,
+            operator_attestation=req.operator_attestation,
+            trust_level=req.trust_level,
         )
         workspace_path = repo_mgr.prepare_workspace(task_id=stable_thread, spec=spec)
         target_repo = str(workspace_path.resolve())
+        yield send_event("log", {"level": "info", "message": f"Security Posture: Repository Trust Level = '{spec.trust_level.upper()}' (Attestation: {spec.operator_attestation})"})
         yield send_event("log", {"level": "success", "message": f"Workspace isolated and verified at: {target_repo}"})
     except Exception as e:
         yield send_event("log", {"level": "error", "message": f"Workspace ingestion failed: {str(e)}"})

@@ -46,7 +46,8 @@ class WorkspaceSpec(BaseModel):
     zip_base64: Optional[str] = Field(default=None, description="Base64-encoded string of uploaded ZIP archive")
     project_name: Optional[str] = Field(default=None, description="Target project/repository folder name")
     isolate_local_copy: bool = Field(default=False, description="Whether to copy local repository into an isolated task workspace")
-    trust_level: Optional[str] = Field(default=None, description="Trust level: 'trusted' vs 'untrusted' (defaults by source_type)")
+    trust_level: Optional[str] = Field(default=None, description="Trust level: 'trusted' vs 'untrusted' (defaults by zero-trust provenance)")
+    operator_attestation: bool = Field(default=False, description="Explicit operator sign-off that repository code has been vetted and trusted")
     sanitize_secrets: bool = Field(default=True, description="Whether to scan and quarantine .env and credential files before execution")
 
     @model_validator(mode="after")
@@ -58,12 +59,17 @@ class WorkspaceSpec(BaseModel):
         if self.source_type == WorkspaceSourceType.ZIP and not (self.zip_bytes or self.zip_base64):
             raise ValueError("zip_bytes or zip_base64 must be provided when source_type is 'zip'")
 
-        # Derive automatic repository trust classification
+        # Derive zero-trust provenance-based repository classification:
+        # Provenance != Storage Location. A local path can contain an unverified third-party clone.
+        # All external code (GitHub, ZIP, or Local Path) is UNTRUSTED by default.
+        # Only Greenfield scaffolding (agent-authored) or explicit operator attestation grants TRUSTED status.
         if not self.trust_level:
-            if self.source_type in (WorkspaceSourceType.GITHUB, WorkspaceSourceType.ZIP):
-                self.trust_level = "untrusted"
-            else:
+            if self.source_type == WorkspaceSourceType.GREENFIELD:
                 self.trust_level = "trusted"
+            elif self.operator_attestation is True:
+                self.trust_level = "trusted"
+            else:
+                self.trust_level = "untrusted"
         return self
 
 
@@ -76,7 +82,7 @@ class WorkspaceMetadata(BaseModel):
     branch: Optional[str] = None
     remote_url: Optional[str] = None
     is_git_repo: bool = False
-    trust_level: str = "trusted"
+    trust_level: str = "untrusted"
 
 
 class RepositoryManager:
