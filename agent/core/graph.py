@@ -428,6 +428,35 @@ def reviewer_node(state: AgentState, config: Optional[RunnableConfig] = None) ->
         "status": "evaluating",
     }
 
+def branch_join_node(state: AgentState, config: Optional[RunnableConfig] = None) -> Dict[str, Any]:
+    """Parallel Fork/Join Barrier: Synchronizes parallel test generation and code review branches."""
+    if state.get("cancelled") or state.get("abort_requested"):
+        return {"cancelled": True, "status": "cancelled"}
+
+    thread_id = resolve_thread_id(state, config)
+    current_iter = state.get("iteration_count", 0)
+    step_idx = len(state.get("agent_history", []))
+    now_epoch = time.time()
+    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now_epoch))
+    event_id = f"hist:branch_join:{thread_id}:iter{current_iter}:step{step_idx}"
+
+    history_entry = {
+        "event_id": event_id,
+        "agent": "SystemOrchestrator",
+        "action": "parallel_branch_join",
+        "test_gen_completed": state.get("test_gen_result") is not None,
+        "review_completed": state.get("review_result") is not None,
+        "iteration": current_iter,
+        "created_at": now_epoch,
+        "timestamp": now_iso,
+    }
+
+    return {
+        "thread_id": thread_id,
+        "agent_history": [history_entry],
+        "status": "branch_joined",
+    }
+
 def manager_finalize_node(state: AgentState, config: Optional[RunnableConfig] = None) -> Dict[str, Any]:
     """Agent 1 (Final): Manager executes independent verification and compiles final outcome report."""
     repo_path = state["repo_path"]
@@ -634,23 +663,33 @@ def build_coding_agent_graph(
 
     workflow = StateGraph(AgentState)
 
-    # Register 5 Specialized Agents + Infrastructure Nodes
+    # Register 5 Specialized Agents + Infrastructure Nodes + Parallel Join Barrier
     workflow.add_node("explore_repo", explore_repo_node)
     workflow.add_node("manager_planner", manager_planner_node)
     workflow.add_node("coder", coder_node)
     workflow.add_node("test_generator", test_generator_node)
+    workflow.add_node("reviewer", reviewer_node)
+    workflow.add_node("branch_join", branch_join_node)
     workflow.add_node("sandbox_runner", sandbox_runner_node)
     workflow.add_node("manager_evaluate", manager_evaluate_node)
     workflow.add_node("debugger", debugger_node)
-    workflow.add_node("reviewer", reviewer_node)
     workflow.add_node("manager_finalize", manager_finalize_node)
 
     # Initial Orchestration Pipeline
     workflow.add_edge(START, "explore_repo")
     workflow.add_edge("explore_repo", "manager_planner")
     workflow.add_edge("manager_planner", "coder")
+
+    # PARALLEL FORK: Coder concurrently branches into Test Generator and Reviewer
     workflow.add_edge("coder", "test_generator")
-    workflow.add_edge("test_generator", "sandbox_runner")
+    workflow.add_edge("coder", "reviewer")
+
+    # PARALLEL JOIN: Both parallel branches converge at branch_join barrier
+    workflow.add_edge("test_generator", "branch_join")
+    workflow.add_edge("reviewer", "branch_join")
+
+    # Post-Join Pipeline: Sandboxed execution followed by Manager Evaluation
+    workflow.add_edge("branch_join", "sandbox_runner")
     workflow.add_edge("sandbox_runner", "manager_evaluate")
 
     # Manager's Dynamic Routing Gate with comprehensive node coverage
@@ -668,12 +707,9 @@ def build_coding_agent_graph(
         },
     )
 
-    # Debugger loops back to Coder with structured remediation
+    # Debugger loops back to Coder with structured remediation (re-triggering parallel fork)
     workflow.add_edge("debugger", "coder")
     
-    # Reviewer routes back to Manager for evaluation
-    workflow.add_edge("reviewer", "manager_evaluate")
-
     # Finalize routes to END
     workflow.add_edge("manager_finalize", END)
 

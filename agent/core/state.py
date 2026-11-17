@@ -411,11 +411,32 @@ def reduce_agent_history(
     return result
 
 
+def reduce_status(current: Optional[str], update: Union[List[str], str, None]) -> str:
+    """Channel reducer for status in concurrent branch execution.
+    
+    If parallel nodes update status (e.g. 'testing' and 'reviewing'),
+    merges them into a deterministic composite status (e.g. 'reviewing/testing').
+    """
+    if isinstance(update, list):
+        filtered = sorted(set(str(u) for u in update if u))
+        return "/".join(filtered) if filtered else (current or "")
+    return str(update) if update else (current or "")
+
+
+def reduce_thread_id(current: Optional[str], update: Union[List[str], str, None]) -> Optional[str]:
+    """Idempotent channel reducer for thread_id."""
+    if isinstance(update, list):
+        return next((str(u) for u in update if u), current)
+    return str(update) if update else current
+
+
 # Explicit Reducer Registry: zero reflection fragility, 100% deterministic
 STATE_REDUCERS: Dict[str, Callable[[Any, Any], Any]] = {
     "error_history": reduce_error_history,
     "completed_actions": reduce_completed_actions,
     "agent_history": reduce_agent_history,
+    "status": reduce_status,
+    "thread_id": reduce_thread_id,
 }
 
 
@@ -571,11 +592,11 @@ class AgentState(TypedDict, total=False):
     error_history: Annotated[List[Dict[str, Any]], reduce_error_history]
     agent_history: Annotated[List[Dict[str, Any]], reduce_agent_history]
     final_report: Optional[str]
-    status: str
+    status: Annotated[str, reduce_status]
     demo_mode: Optional[bool]
     architecture_mode: Optional[str]  # "multi_agent" vs "single_agent_baseline"
     repo_trust_level: Optional[str]   # "trusted" vs "untrusted" (governs fail-closed sandbox policy)
-    thread_id: Optional[str]
+    thread_id: Annotated[Optional[str], reduce_thread_id]
     completed_actions: Annotated[List[str], reduce_completed_actions]  # Prevents repeating completed external side-effects on resume
     resumed_from_checkpoint: Optional[bool]
     permission_policy: Optional[Any]
