@@ -26,11 +26,15 @@ HEURISTIC VS. OS-ENFORCED CONTAINMENT NOTICE:
    OS-enforced boundaries (Linux PID namespaces, cgroups v2 `cgroup.kill`, OCI containers,
    and hypervisor microVMs) MUST be the primary containment guarantee. Untrusted execution
    must never rely solely on psutil heuristic scanning.
-3. CONTAINER TERMINATION GUARANTEES (CGROUP V2):
-   Under Linux cgroup v2, writing '1' to `cgroup.kill` atomically signals every process
-   in the cgroup hierarchy, eliminating fork-bomb signaling race conditions. For Docker/OCI,
-   the barrier verifies that containers have transitioned to exited/dead or have been
-   fully purged from the container daemon table before secret restoration is unlocked.
+3. CONTAINER RUNTIME VS. CGROUP.KILL INTERFACES:
+   `docker rm -f` and `cgroup.kill` are distinct interfaces. `docker rm -f` is an engine-level
+   command operating through containerd and runc. Whether the runtime leverages `cgroup.kill`
+   depends on the runc version (v1.1+) and host kernel cgroup v2 configuration.
+   At the Linux kernel level, writing '1' to `cgroup.kill` instructs the kernel to send SIGKILL
+   to all processes in the cgroup and its sub-cgroups, handling concurrent forks and migrations
+   during the kill operation in kernel space (it does NOT freeze execution first).
+   Our barrier verifies container destruction at the runtime daemon level (confirming status
+   is not running/paused/removing and the container is purged) before secret restoration.
 """
 
 import os
@@ -82,7 +86,12 @@ class ProcessDestructionBarrier:
     def track_child_tree(self, parent_pid: int):
         """Discovers and registers all descendant processes recursively.
         
-        Advisory defense-in-depth: captures child forks before termination.
+        CRITICAL TOCTOU SAMPLING LIMITATION:
+        User-space process tree inspection via psutil is an instantaneous snapshot.
+        If a child process forks immediately after this scan completes, the new descendant
+        will not be in the captured snapshot. This race condition cannot be eliminated
+        in user space; true fork-proof containment requires kernel-level boundaries
+        (Linux PID namespaces where PID 1 termination kills all descendants, or cgroup v2).
         """
         try:
             import psutil
