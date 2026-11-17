@@ -4,28 +4,6 @@ An autonomous software engineering system powered by **LangGraph Multi-Agent Orc
 
 The system establishes a **real multi-agent team** with 5 specialized agents possessing distinct responsibilities, sharing a typed LangGraph `AgentState`, and returning structured Pydantic contracts to a coordinating Manager.
 
-### 🎬 Launch Film & System Overview
-
-[![Autonomous AI Coding Agent Launch Film](brag-output/brag.jpg)](brag-output/brag.mp4)
-*Watch the 60-second client-facing architecture walkthrough: [`brag.mp4`](brag-output/brag.mp4). Showcases agent communication workflow, closed-loop sandbox error diagnosis & remediation, sovereign 4-pillar independent verification, and 100% test pass rate.*
-
----
-
-## 📚 Technical Manuals & Deep-Dive Documentation
-
-All detailed system manuals, interview blueprints, and architectural decision records are organized in [`docs/`](docs/):
-
-| Document | Description | Focus Areas |
-| :--- | :--- | :--- |
-| **[456-Question Master Technical Interview Manual](docs/AUTONOMOUS_CODING_AGENT_INTERVIEW_MASTER_MANUAL.md)** | Definitive technical defense covering 456 deep architectural questions. | TOCTOU race conditions, SQLite WAL recovery, fail-closed gates, and state invariants. |
-| **[Master Architecture & Engineering Guide](docs/AGENT_ENGINEERING_MASTER_GUIDE.md)** | Complete engineering blueprint with line-by-line analysis of all 6 completion gates. | LangGraph topologies, Pydantic schemas, sub-agent handoffs, and error diagnosis. |
-| **[Architecture Comparison & MCP Specification](docs/ARCHITECTURE_COMPARISON_AND_MCP_SPECIFICATION.md)** | Direct mapping to user blueprints, state schema comparison, and MCP tool specification. | 96.4% topological match, MCP JSON-RPC stdio server, tool schemas, and future horizons. |
-| **[System Components Verification Report](docs/SYSTEM_COMPONENTS_VERIFICATION_REPORT.md)** | Rigorous verification receipts across all core components with 230/230 test receipts across 22 test suites. | Evaluation harness, Observability, Advanced memory, Sandbox security, Real-repo benchmarks, Scalability. |
-| **[SWE-50 Benchmark Dataset Specification](docs/BENCHMARK_DATASET_SPECIFICATION.md)** | Empirical dataset specification across 5 complexity tiers and 50 production tasks. | Statistical rigor, McNemar tests, baseline regression criteria, and task taxonomy. |
-| **[Hybrid Orchestration Decisions (ADR)](docs/HYBRID_ORCHESTRATION_DECISIONS.md)** | Architectural Decision Records explaining multi-agent trade-offs vs monoliths. | State management tradeoffs, serialization overhead, and latency mitigation. |
-| **[Engineering Knowledge Transfer](docs/KNOWLEDGE_TRANSFER.md)** | Production operations and maintenance guide for deployment teams. | Environment configuration, sandbox containment, observability pipelines. |
-| **[Empirical Evaluation Reports](docs/reports/)** | Comprehensive empirical benchmarks and comparison data. | 50-task comparative pass rates, self-healing loop efficiency, regression statistics. |
-
 ---
 
 ## 🌐 Repository Ingestion & Workspace Layer
@@ -66,42 +44,6 @@ graph TD
 
     Finalize --> Out([Verified Outcome & Structured Report])
 ```
-
-### 🖼️ Interactive Architecture & Sequence Diagrams (Archify)
-
-#### 1. LangGraph Orchestration & Agent Workflow
-![Autonomous AI Coding Agent: LangGraph Architecture](.archify/archify_langgraph_diagram.png)
-*Figure 1: Archify Interactive Architecture Diagram modeling the 3 subsystem boundaries, 12 semantic components, and closed-loop remediation flow. Open [`archify_langgraph_agent_workflow.html`](.archify/archify_langgraph_agent_workflow.html) in your browser for live particle motion, zoom, pan, theme switching, and vector export.*
-
-#### 2. Agent Failure & Remediation Loop Sequence
-*Figure 2: Archify Interactive Sequence Diagram showing synchronous interactions between Manager, Coder, Execution Sandbox, and Debugger during a failure loop. Open [`archify_failure_loop_sequence.html`](.archify/archify_failure_loop_sequence.html) in your browser.*
-
-#### 3. Task & Patch Lifecycle State Machine
-*Figure 3: Archify Interactive Lifecycle State Machine mapping the main delivery path, self-healing remediation loops, and fail-closed terminal states. Open [`archify_task_patch_lifecycle.html`](.archify/archify_task_patch_lifecycle.html) in your browser.*
-
-#### 4. Sovereign 4-Pillar Verification Workflow
-*Figure 4: Archify Interactive Workflow Diagram depicting the decoupled 4-pillar verification gate (Pytest isolation, AST assertion audit, SHA-256 snapshot comparison, and anti-TOCTOU manifest check). Open [`archify_sovereign_verification_workflow.html`](.archify/archify_sovereign_verification_workflow.html) in your browser.*
-
-#### 5. End-to-End Execution Trace & Latency Waterfall
-*Figure 5: Archify Interactive Waterfall Profiler illustrating span durations, failure interception, and remediation latency across 12 nodes (4.82s total runtime). Open [`archify_execution_trace_waterfall.html`](.archify/archify_execution_trace_waterfall.html) in your browser.*
-
-#### 6. Codebase AST Indexing & Context Injection Dataflow
-*Figure 6: Archify Interactive Dataflow Diagram modeling the ingestion, AST structural parsing, hybrid BM25 scoring, and role-specific prompt injection. Open [`archify_ast_indexing_dataflow.html`](.archify/archify_ast_indexing_dataflow.html) in your browser.*
-
-#### 7. Agent & Pydantic Contract Class Hierarchy
-*Figure 7: Archify Interactive UML Class Diagram depicting the BaseAgent inheritance hierarchy, the 5 specialist agents, the sovereign verifier, and their corresponding Pydantic state contracts. Open [`archify_agent_class_hierarchy.html`](.archify/archify_agent_class_hierarchy.html) in your browser.*
-
-#### 8. SQLite State & Checkpoint Relational Schema (ERD)
-*Figure 8: Archify Interactive Entity Relationship Diagram (ERD) modeling durable SQLite WAL checkpoint tables, foreign-key relationships, step transitions, writes, and immutable handover bundles. Open [`archify_sqlite_checkpoint_erd.html`](.archify/archify_sqlite_checkpoint_erd.html) in your browser.*
-
-#### 9. Codebase Subsystem & Capability Taxonomy (Tree)
-*Figure 9: Archify Interactive Hierarchy Tree Diagram showing single-parent containment of the 5 core pillars (`agent/core/`, `agent/agents/`, `agent/verification/`, `agent/tools/`, `evaluation/`) with live collapsible subtrees, semantic node inspection, and focus views. Open [`archify_codebase_tree_taxonomy.html`](.archify/archify_codebase_tree_taxonomy.html) in your browser.*
-
-#### 10. Architectural Evolution & SWE-50 Benchmark Milestones (Timeline)
-*Figure 10: Archify Interactive Event Timeline Diagram tracing progression across 5 architectural epochs from unmetered zero-shot baseline (24% pass, 28 regressions) to sovereign 4-pillar verification (86% verified pass, 0 regressions, McNemar $p < 0.0001$). Open [`archify_benchmark_timeline.html`](.archify/archify_benchmark_timeline.html) in your browser.*
-
-#### 11. Sovereign Multi-Agent Verification One-Page Explainer (Executive Briefing)
-*Figure 11: Archify Interactive One-Page Explainer presenting the executive defense: conclusion-first thesis, SWE-50 metric charts, native step-through pipeline workflow, architectural comparison matrix, and executable verification checklist. Open [`archify_sovereign_agent_explainer.html`](.archify/archify_sovereign_agent_explainer.html) in your browser.*
 
 ---
 

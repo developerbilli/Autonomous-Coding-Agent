@@ -3,17 +3,34 @@
 # =============================================================================
 
 # =============================================================================
-# Environment Variables & External Service Credentials (CRITICAL SECURITY)
-# Strictly prevents leaking credentials for LLM providers (Google Gemini, OpenAI,
-# Anthropic) and LangSmith distributed tracing.
+# Environment Variables & Sensitive Credentials (CRITICAL SECURITY)
 # =============================================================================
 .env
 .env.*
+.env.example
 .env.local
 .env.development
 .env.test
 .env.production
-!.env.example
+
+# =============================================================================
+# Private Documentation, Interactive Course & Diagrams (Stored in Private Repo)
+# =============================================================================
+docs/
+interactive-course/
+.archify/
+benchmark_baseline_vs_multiagent.py
+
+# =============================================================================
+# Private Launch Films, Media & Presentation Stems
+# =============================================================================
+brag-output/
+*.mp4
+*.webm
+*.jpg
+*.jpeg
+*.png
+*.gif
 
 # =============================================================================
 # Ephemeral Task Workspaces & Target Test Repositories
@@ -77,8 +94,6 @@ Thumbs.db
 *.swo
 
 # =============================================================================
-# Local Assistant Skills, Rules & Intermediate Render Artifacts
+# Local Assistant Skills & Rules
 # =============================================================================
 .agents/
-brag-output/work/
-brag-output/composition/
