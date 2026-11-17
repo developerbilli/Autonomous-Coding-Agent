@@ -2,6 +2,7 @@
 
 from agent.execution.isolation import (
     IsolationLevel,
+    RepoTrustLevel,
     SandboxSecurityPolicy,
     ExecutionOutput,
     TIER_SPECIFICATIONS,
@@ -20,6 +21,7 @@ from agent.execution.sandbox import (
 
 __all__ = [
     "IsolationLevel",
+    "RepoTrustLevel",
     "SandboxSecurityPolicy",
     "ExecutionOutput",
     "TIER_SPECIFICATIONS",

@@ -363,8 +363,9 @@ _PROTECTED_SIGNING_KEYS: Dict[str, bytes] = {}
 class IndependentVerifier:
     """Performs rigorous, multi-faceted independent verification before final handover."""
 
-    def __init__(self, repo_path: str, signing_secret: Optional[bytes] = None):
+    def __init__(self, repo_path: str, signing_secret: Optional[bytes] = None, trust_level: Optional[str] = None):
         self.repo_path = Path(repo_path).resolve()
+        self.trust_level = trust_level
         repo_key = str(self.repo_path)
         if signing_secret:
             self._signing_secret: bytes = signing_secret
@@ -428,7 +429,7 @@ class IndependentVerifier:
         if run_tests and baseline_tests and collection_completed:
             try:
                 from agent.execution.sandbox import ExecutionSandbox
-                sandbox = ExecutionSandbox(str(self.repo_path))
+                sandbox = ExecutionSandbox(str(self.repo_path), trust_level=self.trust_level)
                 baseline_res = sandbox.run_pytest()
                 exit_code = baseline_res.exit_code
                 timed_out = getattr(baseline_res, "timed_out", False) or "timed out" in (baseline_res.error_summary or "").lower()

@@ -409,6 +409,7 @@ async def event_stream_generator(req: RunRequest) -> AsyncGenerator[str, None]:
         "status": "exploring",
         "demo_mode": req.demo_mode or ("self-healing" in req.task.lower() or "demo" in req.task.lower()),
         "architecture_mode": req.mode,
+        "repo_trust_level": spec.trust_level,
         "thread_id": stable_thread,
         "resumed_from_checkpoint": bool(prior_tuple),
     }

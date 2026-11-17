@@ -27,6 +27,7 @@ from agent.execution.isolation import (
     SandboxSecurityPolicy,
     ExecutionOutput,
     IsolationLevel,
+    RepoTrustLevel,
     TIER_SPECIFICATIONS,
 )
 from agent.execution.container_sandbox import ContainerSandbox
@@ -75,11 +76,26 @@ class ExecutionSandbox:
         network_mode: str = "none",
         preferred_isolation: Optional[IsolationLevel] = None,
         allow_process_fallback: Optional[bool] = None,
+        trust_level: Optional[Any] = None,
     ):
         self.repo_path = Path(repo_path).resolve()
-        
+
+        # Parse repository trust level
+        if isinstance(trust_level, str):
+            try:
+                self.trust_level = RepoTrustLevel(trust_level.lower())
+            except ValueError:
+                self.trust_level = RepoTrustLevel.UNTRUSTED
+        elif isinstance(trust_level, RepoTrustLevel):
+            self.trust_level = trust_level
+        else:
+            self.trust_level = None
+
         # Check explicit parameter or environment override
-        if allow_process_fallback is None:
+        # Security Rule: UNTRUSTED code strictly disallows Tier 4 process fallback
+        if self.trust_level == RepoTrustLevel.UNTRUSTED:
+            fallback_enabled = False
+        elif allow_process_fallback is None:
             env_override = os.environ.get("ALLOW_UNSAFE_HOST_FALLBACK", "").strip().lower()
             fallback_enabled = env_override in ("1", "true", "yes")
         else:
@@ -91,6 +107,7 @@ class ExecutionSandbox:
             cpu_limit=cpu_limit,
             network_mode=network_mode,
             allow_process_fallback=fallback_enabled,
+            trust_level=self.trust_level or RepoTrustLevel.TRUSTED,
         )
 
         # Initialize dedicated isolation engines for each tier
@@ -162,6 +179,7 @@ class ExecutionSandbox:
             "pids_limit": self.policy.pids_limit,
             "output_limit": f"{self.policy.max_output_bytes // 1024}KB",
             "timeout_seconds": self.policy.timeout_seconds,
+            "trust_level": self.trust_level.value if self.trust_level else "unspecified",
             "allow_process_fallback": self.policy.allow_process_fallback,
             "fallback_blocked": self.fallback_blocked,
             "container_runtime_available": self.container_engine.is_available(),

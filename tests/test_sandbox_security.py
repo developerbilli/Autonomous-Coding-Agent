@@ -4,7 +4,7 @@ import os
 import sys
 import pytest
 from pathlib import Path
-from agent.execution.isolation import IsolationLevel, SandboxSecurityPolicy, TIER_SPECIFICATIONS
+from agent.execution.isolation import IsolationLevel, RepoTrustLevel, SandboxSecurityPolicy, TIER_SPECIFICATIONS
 from agent.execution.container_sandbox import ContainerSandbox
 from agent.execution.microvm_sandbox import (
     FirecrackerMicroVMSandbox,
@@ -276,4 +276,71 @@ def test_sandbox_posix_memory_quota_configuration():
     sandbox = HardenedProcessSandbox(str(MOCK_REPO), policy=policy)
     preexec = sandbox._create_preexec_fn()
     assert callable(preexec)
+
+
+def test_untrusted_repository_blocks_tier4_fallback_even_with_env_override(monkeypatch):
+    """Verify that an UNTRUSTED repository strictly blocks Tier 4 fallback even if ALLOW_UNSAFE_HOST_FALLBACK=1."""
+    monkeypatch.setenv("ALLOW_UNSAFE_HOST_FALLBACK", "1")
+
+    # When marked untrusted, Tier 4 host process execution must be refused
+    sandbox = ExecutionSandbox(str(MOCK_REPO), trust_level="untrusted")
+    if not (sandbox.microvm_engine.is_available() or sandbox.gvisor_engine.is_available() or sandbox.container_engine.is_available()):
+        assert sandbox.fallback_blocked is True
+        assert sandbox.policy.allow_process_fallback is False
+        assert sandbox.trust_level == RepoTrustLevel.UNTRUSTED
+
+        with pytest.raises(SecurityIsolationUnavailableError):
+            sandbox.run_command(["whoami"])
+
+        result = sandbox.run_pytest()
+        assert result.passed is False
+        assert result.exit_code == 126
+        assert "SECURITY_ISOLATION_UNAVAILABLE" in result.failed_tests
+
+
+def test_trusted_repository_allows_tier4_fallback_when_env_enabled(monkeypatch):
+    """Verify that a TRUSTED repository permits Tier 4 host fallback when operator authorizes it."""
+    monkeypatch.setenv("ALLOW_UNSAFE_HOST_FALLBACK", "1")
+
+    sandbox = ExecutionSandbox(str(MOCK_REPO), trust_level="trusted")
+    if not (sandbox.microvm_engine.is_available() or sandbox.gvisor_engine.is_available() or sandbox.container_engine.is_available()):
+        assert sandbox.fallback_blocked is False
+        assert sandbox.policy.allow_process_fallback is True
+        assert sandbox.trust_level == RepoTrustLevel.TRUSTED
+        assert sandbox.isolation_level == IsolationLevel.HARDENED_PROCESS
+
+
+def test_repository_spec_trust_level_auto_classification():
+    """Verify that WorkspaceSpec automatically derives trust_level from source_type."""
+    from agent.repository.manager import WorkspaceSpec, WorkspaceSourceType
+
+    # Remote GitHub URL -> UNTRUSTED
+    gh_spec = WorkspaceSpec(
+        source_type=WorkspaceSourceType.GITHUB,
+        github_url="https://github.com/example/repo.git",
+    )
+    assert gh_spec.trust_level == "untrusted"
+
+    # Uploaded ZIP -> UNTRUSTED
+    zip_spec = WorkspaceSpec(
+        source_type=WorkspaceSourceType.ZIP,
+        zip_bytes=b"PK...",
+    )
+    assert zip_spec.trust_level == "untrusted"
+
+    # Local Path -> TRUSTED by default
+    local_spec = WorkspaceSpec(
+        source_type=WorkspaceSourceType.LOCAL,
+        local_path="/path/to/local/repo",
+    )
+    assert local_spec.trust_level == "trusted"
+
+    # Explicit override respected
+    untrusted_local = WorkspaceSpec(
+        source_type=WorkspaceSourceType.LOCAL,
+        local_path="/path/to/downloaded/repo",
+        trust_level="untrusted",
+    )
+    assert untrusted_local.trust_level == "untrusted"
+
 

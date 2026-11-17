@@ -63,7 +63,7 @@ def explore_repo_node(state: AgentState, config: Optional[RunnableConfig] = None
     rich_context = indexer.retrieve_rich_context(task)
 
     # Snapshot baseline tests, inventory, and pre-implementation test outcomes
-    verifier = IndependentVerifier(repo_path)
+    verifier = IndependentVerifier(repo_path, trust_level=state.get("repo_trust_level"))
     baseline_data = verifier.capture_baseline(run_tests=True)
 
     return {
@@ -243,7 +243,8 @@ def sandbox_runner_node(state: AgentState, config: Optional[RunnableConfig] = No
 
     repo_path = state["repo_path"]
     thread_id = resolve_thread_id(state, config)
-    sandbox = ExecutionSandbox(repo_path)
+    trust_level = state.get("repo_trust_level")
+    sandbox = ExecutionSandbox(repo_path, trust_level=trust_level)
     results = sandbox.run_pytest()
 
     return {
@@ -431,7 +432,7 @@ def manager_finalize_node(state: AgentState, config: Optional[RunnableConfig] = 
     """Agent 1 (Final): Manager executes independent verification and compiles final outcome report."""
     repo_path = state["repo_path"]
     thread_id = resolve_thread_id(state, config)
-    verifier = IndependentVerifier(repo_path)
+    verifier = IndependentVerifier(repo_path, trust_level=state.get("repo_trust_level"))
     verification_res: VerificationResult = state.get("verification_result") or verifier.verify(state)
 
     # Sovereign authority evaluation: Manager cannot declare success on its own

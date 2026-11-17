@@ -1,8 +1,15 @@
 """Central state schema and structured agent contracts for the Multi-Agent Coding System."""
 
 import time
+from enum import Enum
 from typing import TypedDict, Optional, List, Dict, Any, Literal, Annotated, Callable, Union, Set, Tuple
 from pydantic import BaseModel, Field
+
+
+class RepoTrustLevel(str, Enum):
+    """Trust classification for target code repositories."""
+    TRUSTED = "trusted"
+    UNTRUSTED = "untrusted"
 
 
 class ErrorEvent(BaseModel):
@@ -567,6 +574,7 @@ class AgentState(TypedDict, total=False):
     status: str
     demo_mode: Optional[bool]
     architecture_mode: Optional[str]  # "multi_agent" vs "single_agent_baseline"
+    repo_trust_level: Optional[str]   # "trusted" vs "untrusted" (governs fail-closed sandbox policy)
     thread_id: Optional[str]
     completed_actions: Annotated[List[str], reduce_completed_actions]  # Prevents repeating completed external side-effects on resume
     resumed_from_checkpoint: Optional[bool]

@@ -46,6 +46,7 @@ class WorkspaceSpec(BaseModel):
     zip_base64: Optional[str] = Field(default=None, description="Base64-encoded string of uploaded ZIP archive")
     project_name: Optional[str] = Field(default=None, description="Target project/repository folder name")
     isolate_local_copy: bool = Field(default=False, description="Whether to copy local repository into an isolated task workspace")
+    trust_level: Optional[str] = Field(default=None, description="Trust level: 'trusted' vs 'untrusted' (defaults by source_type)")
 
     @model_validator(mode="after")
     def validate_spec(self):
@@ -55,6 +56,13 @@ class WorkspaceSpec(BaseModel):
             raise ValueError("local_path must be specified when source_type is 'local'")
         if self.source_type == WorkspaceSourceType.ZIP and not (self.zip_bytes or self.zip_base64):
             raise ValueError("zip_bytes or zip_base64 must be provided when source_type is 'zip'")
+
+        # Derive automatic repository trust classification
+        if not self.trust_level:
+            if self.source_type in (WorkspaceSourceType.GITHUB, WorkspaceSourceType.ZIP):
+                self.trust_level = "untrusted"
+            else:
+                self.trust_level = "trusted"
         return self
 
 
@@ -67,6 +75,7 @@ class WorkspaceMetadata(BaseModel):
     branch: Optional[str] = None
     remote_url: Optional[str] = None
     is_git_repo: bool = False
+    trust_level: str = "trusted"
 
 
 class RepositoryManager:

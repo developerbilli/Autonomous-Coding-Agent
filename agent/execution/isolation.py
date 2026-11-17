@@ -49,6 +49,12 @@ class IsolationLevel(str, Enum):
     CONTAINER = "container"                # Tier 3: OCI Container (Docker / Podman) with namespaces & cgroups
     HARDENED_PROCESS = "hardened_process"  # Tier 4: Defense-in-depth process fallback (weaker boundary)
 
+
+class RepoTrustLevel(str, Enum):
+    """Trust classification for target code repositories."""
+    TRUSTED = "trusted"        # Verified internal repository or clean greenfield scaffolding
+    UNTRUSTED = "untrusted"    # External GitHub URL, uploaded ZIP archive, or unvetted third-party code
+
 TIER_SPECIFICATIONS: Dict[str, Dict[str, Any]] = {
     IsolationLevel.MICROVM.value: {
         "tier_name": "Tier 1: Hardware-Virtualized MicroVM",
@@ -115,6 +121,7 @@ TIER_SPECIFICATIONS: Dict[str, Dict[str, Any]] = {
 class SandboxSecurityPolicy(BaseModel):
     """Enforced security controls for untrusted code execution."""
     isolation_level: IsolationLevel = IsolationLevel.HARDENED_PROCESS
+    trust_level: RepoTrustLevel = RepoTrustLevel.UNTRUSTED
     non_root_user: str = "1001:1001"
     network_mode: str = "none"                  # Kernel network namespace isolation (CLONE_NEWNET)
     memory_limit_mb: int = 512                  # Max virtual/resident memory (cgroup memory.max / RLIMIT_AS)
