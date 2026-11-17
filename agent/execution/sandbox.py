@@ -77,6 +77,7 @@ class ExecutionSandbox:
         preferred_isolation: Optional[IsolationLevel] = None,
         allow_process_fallback: Optional[bool] = None,
         trust_level: Optional[Any] = None,
+        sanitize_secrets: bool = True,
     ):
         self.repo_path = Path(repo_path).resolve()
 
@@ -109,6 +110,21 @@ class ExecutionSandbox:
             allow_process_fallback=fallback_enabled,
             trust_level=self.trust_level or RepoTrustLevel.TRUSTED,
         )
+
+        # Defense-in-depth: Automatically quarantine workspace credentials for isolated or untrusted repos
+        self.quarantined_secrets = []
+        is_isolated_workspace = (
+            "workspaces" in self.repo_path.parts
+            or self.trust_level == RepoTrustLevel.UNTRUSTED
+            or "mock_repo" in self.repo_path.parts
+            or "sandbox_" in self.repo_path.name
+        )
+        if sanitize_secrets and is_isolated_workspace and self.repo_path.exists():
+            try:
+                from agent.repository.sanitizer import WorkspaceSanitizer
+                self.quarantined_secrets = WorkspaceSanitizer.quarantine_secrets(self.repo_path)
+            except Exception as e:
+                logger.warning(f"Could not scan/quarantine workspace secrets: {e}")
 
         # Initialize dedicated isolation engines for each tier
         self.microvm_engine = FirecrackerMicroVMSandbox(str(self.repo_path), policy=self.policy)
@@ -180,6 +196,7 @@ class ExecutionSandbox:
             "output_limit": f"{self.policy.max_output_bytes // 1024}KB",
             "timeout_seconds": self.policy.timeout_seconds,
             "trust_level": self.trust_level.value if self.trust_level else "unspecified",
+            "quarantined_secrets_count": len(self.quarantined_secrets),
             "allow_process_fallback": self.policy.allow_process_fallback,
             "fallback_blocked": self.fallback_blocked,
             "container_runtime_available": self.container_engine.is_available(),

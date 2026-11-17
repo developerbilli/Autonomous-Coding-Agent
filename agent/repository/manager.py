@@ -47,6 +47,7 @@ class WorkspaceSpec(BaseModel):
     project_name: Optional[str] = Field(default=None, description="Target project/repository folder name")
     isolate_local_copy: bool = Field(default=False, description="Whether to copy local repository into an isolated task workspace")
     trust_level: Optional[str] = Field(default=None, description="Trust level: 'trusted' vs 'untrusted' (defaults by source_type)")
+    sanitize_secrets: bool = Field(default=True, description="Whether to scan and quarantine .env and credential files before execution")
 
     @model_validator(mode="after")
     def validate_spec(self):
@@ -84,6 +85,7 @@ class RepositoryManager:
     def __init__(self, base_workspace_dir: str = "workspaces"):
         self.base_dir = Path(base_workspace_dir).resolve()
         self.base_dir.mkdir(parents=True, exist_ok=True)
+        self.quarantine_registry: Dict[str, List[Any]] = {}
 
     def prepare_workspace(self, task_id: str, spec: WorkspaceSpec) -> Path:
         """Prepares an isolated filesystem workspace based on the given specification."""
@@ -93,15 +95,34 @@ class RepositoryManager:
         logger.info(f"Preparing workspace for task '{task_id}' with source_type='{spec.source_type}'")
 
         if spec.source_type == WorkspaceSourceType.GITHUB:
-            return self._clone_github(task_dir, spec)
+            ws_path = self._clone_github(task_dir, spec)
         elif spec.source_type == WorkspaceSourceType.LOCAL:
-            return self._prepare_local(task_dir, spec)
+            ws_path = self._prepare_local(task_dir, spec)
         elif spec.source_type == WorkspaceSourceType.ZIP:
-            return self._extract_zip(task_dir, spec)
+            ws_path = self._extract_zip(task_dir, spec)
         elif spec.source_type == WorkspaceSourceType.GREENFIELD:
-            return self._scaffold_greenfield(task_dir, spec)
+            ws_path = self._scaffold_greenfield(task_dir, spec)
         else:
             raise ValueError(f"Unsupported workspace source_type: {spec.source_type}")
+
+        # Security: Automatically sanitize workspace credentials (.env, secrets)
+        if spec.sanitize_secrets:
+            from agent.repository.sanitizer import WorkspaceSanitizer
+            quarantine_dir = task_dir / ".quarantine"
+            records = WorkspaceSanitizer.quarantine_secrets(ws_path, quarantine_dir=quarantine_dir)
+            if records:
+                self.quarantine_registry[task_id] = records
+                logger.info(f"Sanitized and quarantined {len(records)} credential files in workspace '{task_id}'")
+
+        return ws_path
+
+    def restore_workspace_secrets(self, task_id: str, ws_path: Path) -> int:
+        """Restores quarantined secret files when explicitly authorized upon task completion."""
+        records = self.quarantine_registry.get(task_id, [])
+        if not records:
+            return 0
+        from agent.repository.sanitizer import WorkspaceSanitizer
+        return WorkspaceSanitizer.restore_secrets(ws_path, records)
 
     def _clone_github(self, task_dir: Path, spec: WorkspaceSpec) -> Path:
         """Clones a GitHub repository into an isolated workspace directory."""
