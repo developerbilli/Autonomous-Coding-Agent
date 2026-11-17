@@ -92,9 +92,20 @@ class ExecutionSandbox:
         else:
             self.trust_level = None
 
+        # Check deployment environment
+        deploy_env = (
+            os.environ.get("ENVIRONMENT")
+            or os.environ.get("APP_ENV")
+            or os.environ.get("DEPLOYMENT_ENV")
+            or "development"
+        ).strip().lower()
+        self.is_production = deploy_env in ("production", "prod")
+
         # Check explicit parameter or environment override
-        # Security Rule: UNTRUSTED code strictly disallows Tier 4 process fallback
-        if self.trust_level == RepoTrustLevel.UNTRUSTED:
+        # Security Invariants:
+        # 1. In PRODUCTION, Tier 4 host-process fallback is strictly FORBIDDEN under all circumstances.
+        # 2. For UNTRUSTED repositories, Tier 4 process fallback is strictly FORBIDDEN under all circumstances.
+        if self.is_production or self.trust_level == RepoTrustLevel.UNTRUSTED:
             fallback_enabled = False
         elif allow_process_fallback is None:
             env_override = os.environ.get("ALLOW_UNSAFE_HOST_FALLBACK", "").strip().lower()
@@ -196,6 +207,7 @@ class ExecutionSandbox:
             "output_limit": f"{self.policy.max_output_bytes // 1024}KB",
             "timeout_seconds": self.policy.timeout_seconds,
             "trust_level": self.trust_level.value if self.trust_level else "unspecified",
+            "is_production": self.is_production,
             "quarantined_secrets_count": len(self.quarantined_secrets),
             "allow_process_fallback": self.policy.allow_process_fallback,
             "fallback_blocked": self.fallback_blocked,

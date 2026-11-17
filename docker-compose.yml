@@ -12,7 +12,8 @@ services:
     environment:
       - PORT=8000
       - PYTHONUNBUFFERED=1
-      - ALLOW_UNSAFE_HOST_FALLBACK=1
+      - ENVIRONMENT=production
+      - ALLOW_UNSAFE_HOST_FALLBACK=0
       - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
       - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
       - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-autonomous-coding-agent}

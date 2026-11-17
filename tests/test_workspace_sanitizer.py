@@ -148,3 +148,4 @@ def test_repository_manager_automatic_quarantine(temp_workspace):
         assert "AIzaSyFakeSecretKey12345" in (ws_path / ".env").read_text()
     finally:
         shutil.rmtree(base_ws, ignore_errors=True)
+

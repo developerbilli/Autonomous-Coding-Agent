@@ -177,3 +177,4 @@ class WorkspaceSanitizer:
                     logger.warning(f"Failed to restore quarantined file '{rec.rel_path}': {e}")
 
         return restored_count
+

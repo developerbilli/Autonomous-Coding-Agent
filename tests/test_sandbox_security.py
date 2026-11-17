@@ -344,3 +344,24 @@ def test_repository_spec_trust_level_auto_classification():
     assert untrusted_local.trust_level == "untrusted"
 
 
+def test_production_environment_strictly_blocks_fallback_even_with_env_override(monkeypatch):
+    """Verify that in PRODUCTION, Tier 4 host-process fallback is strictly FORBIDDEN under all circumstances."""
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("ALLOW_UNSAFE_HOST_FALLBACK", "1")
+
+    # Even with trust_level="trusted" and ALLOW_UNSAFE_HOST_FALLBACK=1, production locks out Tier 4
+    sandbox = ExecutionSandbox(str(MOCK_REPO), trust_level="trusted")
+    assert sandbox.is_production is True
+    if not (sandbox.microvm_engine.is_available() or sandbox.gvisor_engine.is_available() or sandbox.container_engine.is_available()):
+        assert sandbox.fallback_blocked is True
+        assert sandbox.policy.allow_process_fallback is False
+
+        with pytest.raises(SecurityIsolationUnavailableError):
+            sandbox.run_command(["whoami"])
+
+        status = sandbox.get_security_status()
+        assert status["is_production"] is True
+        assert status["fallback_blocked"] is True
+
+
+
