@@ -12,7 +12,11 @@ Security Architecture & Controlled Mounts:
    - Explicit controlled writable mounts:
        * /tmp: tmpfs mount with flags 'rw,noexec,nosuid,size=64m'.
          - 'rw': Allows pytest and Python interpreters to write temporary test files.
-         - 'noexec': Prevents execution of downloaded or dropped binaries in /tmp.
+         - 'noexec': Prevents direct kernel execve() of dropped or downloaded binaries.
+           CRITICAL CAVEAT: 'noexec' does NOT block dynamic interpreters (e.g.,
+           'python /tmp/malicious.py') because interpreters read scripts as data (O_RDONLY)
+           rather than issuing execve(). Defense against interpreted payloads relies on
+           the read-only container rootfs, network air-gapping (--network=none), and dropped caps.
          - 'nosuid': Disallows SUID privilege escalation.
          - 'size=64m': Protects host RAM from memory exhaustion via disk bombing.
        * /run: tmpfs mount with flags 'rw,noexec,nosuid,size=16m' for runtime locks.

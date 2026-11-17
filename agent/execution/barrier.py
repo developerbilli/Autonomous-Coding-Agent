@@ -14,6 +14,23 @@ The ProcessDestructionBarrier guarantees:
 3. Active containers are forcefully killed and removed (docker kill / rm -f).
 4. Secret restoration is strictly REFUSED (raises ProcessBarrierViolationError)
    if any untrusted execution process remains alive.
+
+HEURISTIC VS. OS-ENFORCED CONTAINMENT NOTICE:
+---------------------------------------------
+1. HEURISTIC STATUS OF PSUTIL SCANNING:
+   Scanning process CWDs and open file descriptors via psutil is an advisory heuristic
+   defense-in-depth for Tier 4 host execution. It is NOT an unbypassable kernel
+   containment boundary. A malicious process can execute `os.chdir("/")`, close workspace
+   file descriptors, and fork into detached sessions.
+2. PRIMARY LIFECYCLE CONTAINMENT:
+   OS-enforced boundaries (Linux PID namespaces, cgroups v2 `cgroup.kill`, OCI containers,
+   and hypervisor microVMs) MUST be the primary containment guarantee. Untrusted execution
+   must never rely solely on psutil heuristic scanning.
+3. CONTAINER TERMINATION GUARANTEES (CGROUP V2):
+   Under Linux cgroup v2, writing '1' to `cgroup.kill` atomically signals every process
+   in the cgroup hierarchy, eliminating fork-bomb signaling race conditions. For Docker/OCI,
+   the barrier verifies that containers have transitioned to exited/dead or have been
+   fully purged from the container daemon table before secret restoration is unlocked.
 """
 
 import os
@@ -62,6 +79,19 @@ class ProcessDestructionBarrier:
             self._tracked_containers.add((container_name, runtime_binary))
             logger.debug(f"Registered container '{container_name}' with ProcessDestructionBarrier")
 
+    def track_child_tree(self, parent_pid: int):
+        """Discovers and registers all descendant processes recursively.
+        
+        Advisory defense-in-depth: captures child forks before termination.
+        """
+        try:
+            import psutil
+            parent = psutil.Process(parent_pid)
+            for child in parent.children(recursive=True):
+                self.register_pid(child.pid)
+        except Exception:
+            pass
+
     def is_pid_alive(self, pid: int) -> bool:
         """Checks if a given process ID is still alive."""
         if pid <= 0:
@@ -87,25 +117,33 @@ class ProcessDestructionBarrier:
             return False
 
     def is_container_alive(self, container_name: str, runtime_binary: str) -> bool:
-        """Checks if a container is still running."""
+        """Checks if a container is still running, paused, or removing.
+        
+        Uses Docker inspect status: returns True if status is 'running', 'paused', 
+        'restarting', or 'removing'. Returns False if 'exited', 'dead', or not found.
+        """
         try:
             res = subprocess.run(
-                [runtime_binary, "inspect", "-f", "{{.State.Running}}", container_name],
+                [runtime_binary, "inspect", "-f", "{{.State.Status}}", container_name],
                 capture_output=True,
                 text=True,
                 timeout=2,
             )
-            return res.returncode == 0 and res.stdout.strip().lower() == "true"
+            if res.returncode != 0:
+                return False
+            status = res.stdout.strip().lower()
+            return status in ("running", "paused", "restarting", "removing")
         except Exception:
             return False
 
     def find_orphaned_workspace_processes(self, workspace_dir: Optional[Path] = None) -> List[int]:
-        """Detects any running host processes whose current working directory resides in the workspace.
+        """Detects running host processes interacting with the workspace.
         
-        ANTI-SESSION ESCAPE DEFENSE:
-        If a hostile script executes double-fork + setsid() to escape its process group,
-        it still retains its current working directory (cwd) inside the task workspace.
-        This scanner identifies detached escapees and marks them for unconditional destruction.
+        DEFENSE-IN-DEPTH HEURISTIC:
+        Inspects process CWDs and open file descriptors pointing into the task workspace.
+        Note: This is an advisory heuristic for Tier 4 host execution. A malicious process
+        could call os.chdir("/") and close open descriptors to evade this check. True lifecycle
+        containment requires OS-level PID namespaces and cgroup v2 (cgroup.kill).
         """
         target_dir = workspace_dir or self.workspace_path
         if not target_dir:
@@ -120,14 +158,24 @@ class ProcessDestructionBarrier:
 
         try:
             import psutil
-            for proc in psutil.process_iter(['pid', 'cwd']):
+            for proc in psutil.process_iter(['pid', 'cwd', 'open_files']):
                 try:
                     pinfo = proc.info
                     p_pid = pinfo.get('pid')
                     if not p_pid or p_pid == current_pid:
                         continue
+                    is_orphan = False
                     p_cwd = pinfo.get('cwd')
                     if p_cwd and (p_cwd == target_str or p_cwd.startswith(target_str + os.sep)):
+                        is_orphan = True
+                    if not is_orphan:
+                        open_files = pinfo.get('open_files') or []
+                        for f in open_files:
+                            fpath = getattr(f, 'path', None)
+                            if fpath and (fpath == target_str or fpath.startswith(target_str + os.sep)):
+                                is_orphan = True
+                                break
+                    if is_orphan:
                         orphans.append(p_pid)
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     continue
@@ -172,7 +220,7 @@ class ProcessDestructionBarrier:
 
     def terminate_all(self, grace_seconds: float = 0.5) -> bool:
         """Enforces termination of all tracked containers, process groups, and workspace orphans."""
-        # Step 1: Force remove all tracked containers
+        # Step 1: Force remove all tracked containers and verify termination
         for container_name, runtime_bin in list(self._tracked_containers):
             try:
                 subprocess.run(
@@ -182,6 +230,13 @@ class ProcessDestructionBarrier:
                 )
             except Exception as e:
                 logger.debug(f"Error removing container {container_name}: {e}")
+
+        # Verify container removal from daemon table
+        for container_name, runtime_bin in list(self._tracked_containers):
+            for _ in range(10):
+                if not self.is_container_alive(container_name, runtime_bin):
+                    break
+                time.sleep(0.1)
 
         # Step 2: Graceful SIGTERM to process groups
         for pid, pgid in list(self._tracked_pids.items()):
