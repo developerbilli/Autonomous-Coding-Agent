@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "waterfall",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/waterfall-execution-trace-20261104-111600/candidate.json",
+    "sha256": "8d918b0b4e80c6232dc0f99c65594995e96e186598904080dccc1a414e5fa105",
+    "bytes": 4871
+  },
+  "artifact": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/waterfall-execution-trace-20261104-111600/execution-trace-waterfall.html",
+    "sha256": "f0ad39ea9e17d9105c01b8c241a1b6126a01822b86545047531bf857ee212aa7",
+    "bytes": 851309
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/waterfall-execution-trace-20261104-111600/execution-trace-waterfall.finalize.json",
+    "summaryReceipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/waterfall-execution-trace-20261104-111600/execution-trace-waterfall.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/waterfall-execution-trace-20261104-111600/execution-trace-waterfall.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-04T05:17:56.041Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2492,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

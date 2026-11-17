@@ -1,0 +1,71 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Autonomous Agent Task & Patch Lifecycle",
+    "output": ".archify/lifecycle-task-patch-state-20261104-110500/task-patch-lifecycle.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase"
+  },
+  "mainPath": [
+    "planning",
+    "coding",
+    "testing",
+    "verifying",
+    "delivered"
+  ],
+  "states": [
+    { "id": "planning", "type": "start", "label": "Planning", "sublabel": "intake & AST index", "tag": "strategy", "step": "01" },
+    { "id": "coding", "type": "active", "label": "Coding", "sublabel": "surgical patch", "tag": "implementation", "step": "02" },
+    { "id": "testing", "type": "decision", "label": "Sandbox", "sublabel": "docker pytest", "tag": "empirical", "step": "03" },
+    { "id": "verifying", "type": "decision", "label": "Verifying", "sublabel": "review & 4 pillars", "tag": "sovereign", "step": "04" },
+    { "id": "delivered", "type": "success", "label": "Delivered", "sublabel": "sealed artifact", "tag": "completed", "step": "05" },
+    { "id": "remediating", "type": "active", "label": "Remediating", "sublabel": "debugger analysis", "tag": "self-healing" },
+    { "id": "rejected", "type": "failure", "label": "Rejected", "sublabel": "regression / TOCTOU", "tag": "terminal" },
+    { "id": "exhausted", "type": "failure", "label": "Exhausted", "sublabel": "budget cap hit", "tag": "fail-closed" },
+    { "id": "cancelled", "type": "neutral", "label": "Cancelled", "sublabel": "operator abort", "tag": "halted" }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "planning", "to": "coding", "label": "dispatch" },
+    { "id": "t2", "from": "coding", "to": "testing", "label": "patch" },
+    { "id": "t3", "from": "testing", "to": "verifying", "label": "pass" },
+    { "id": "t4", "from": "verifying", "to": "delivered", "label": "pass", "variant": "emphasis" },
+    { "id": "t5", "from": "testing", "to": "remediating", "label": "fail", "variant": "security" },
+    { "id": "t6", "from": "remediating", "to": "coding", "label": "fix plan" },
+    { "id": "t7", "from": "verifying", "to": "remediating", "label": "audit fail", "variant": "security" },
+    { "id": "t8", "from": "verifying", "to": "rejected", "label": "regression", "variant": "security" },
+    { "id": "t9", "from": "remediating", "to": "exhausted", "label": "iter >= 5", "variant": "security" },
+    { "id": "t10", "from": "coding", "to": "cancelled", "label": "abort", "variant": "dashed" },
+    { "id": "t11", "from": "testing", "to": "cancelled", "label": "abort", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "1. Sovereign Happy Path",
+      "items": [
+        "Task moves linearly through planning, coding, sandbox test, and verification",
+        "Each stage transition is mediated by typed Pydantic contracts in state",
+        "Final delivery produces a sealed tarball and tamper-evident audit report"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "2. Closed-Loop Remediation",
+      "items": [
+        "Sandbox test failures divert to Debugger Agent without human operator input",
+        "Debugger isolates stack frame bottom-up without mutating files directly",
+        "Manager meters retry budget centrally to prevent unbounded token spend"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "3. Fail-Closed Terminal Guards",
+      "items": [
+        "Any baseline regression or TOCTOU drift halts admission as Rejected",
+        "Budget exhaustion terminates run with full forensic state dump",
+        "Cooperative cancellation safely releases Docker worktree locks"
+      ]
+    }
+  ]
+}

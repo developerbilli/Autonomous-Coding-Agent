@@ -1,0 +1,84 @@
+# =============================================================================
+# Autonomous AI Coding Agent - Git Ignore Rules
+# =============================================================================
+
+# =============================================================================
+# Environment Variables & External Service Credentials (CRITICAL SECURITY)
+# Strictly prevents leaking credentials for LLM providers (Google Gemini, OpenAI,
+# Anthropic) and LangSmith distributed tracing.
+# =============================================================================
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# =============================================================================
+# Ephemeral Task Workspaces & Target Test Repositories
+# =============================================================================
+workspaces/
+calculator_repo/
+mock_repo/
+
+# =============================================================================
+# Scratch & Temporary Testing Scripts
+# =============================================================================
+scratch/
+
+# =============================================================================
+# State Checkpoints, Idempotency Journals & SQLite Databases
+# =============================================================================
+.checkpoints/
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# =============================================================================
+# Python Cache, Bytecode & Build Artifacts
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# =============================================================================
+# Virtual Environments & Framework Caches
+# =============================================================================
+venv/
+.venv/
+.venv_render/
+env/
+ENV/
+.langgraph_api/
+
+# =============================================================================
+# Operating System & IDE Metadata
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# =============================================================================
+# Local Assistant Skills, Rules & Intermediate Render Artifacts
+# =============================================================================
+.agents/
+brag-output/work/
+brag-output/composition/

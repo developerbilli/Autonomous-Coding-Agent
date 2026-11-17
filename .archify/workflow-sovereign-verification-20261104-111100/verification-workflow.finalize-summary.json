@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/workflow-sovereign-verification-20261104-111100/candidate.json",
+    "sha256": "4f0a6b6b1dfb0ee95bf68377de514c3c2e298f377475e5d8d167705505f80d3a",
+    "bytes": 5937
+  },
+  "artifact": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/workflow-sovereign-verification-20261104-111100/verification-workflow.html",
+    "sha256": "5df9a17a941fb8c3ea995ab7a4d1687139e3c53d95c395d5f48fc66999e6d923",
+    "bytes": 857094
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/workflow-sovereign-verification-20261104-111100/verification-workflow.finalize.json",
+    "summaryReceipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/workflow-sovereign-verification-20261104-111100/verification-workflow.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/workflow-sovereign-verification-20261104-111100/verification-workflow.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-04T05:17:56.041Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2764,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

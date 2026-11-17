@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous AI Coding Agent — Interactive Course</title>
+
+  <!-- Google Fonts: Bricolage Grotesque · DM Sans · JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    :root {
+      --color-accent:       #2A7B9B;
+      --color-accent-hover: #1F6280;
+      --color-accent-light: #E4F2F7;
+      --color-accent-muted: #5A9DB8;
+    }
+  </style>
+
+  <script src="main.js" defer></script>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    <div class="nav-inner">
+      <span class="nav-title">Autonomous AI Coding Agent</span>
+      <div class="nav-dots" id="nav-dots" role="tablist">
+        <button class="nav-dot" data-target="module-1" data-tooltip="1. The Autonomous Team" role="tab" aria-label="Module 1: The Autonomous Team"></button>
+        <button class="nav-dot" data-target="module-2" data-tooltip="2. Meet the 5 Agents" role="tab" aria-label="Module 2: Meet the 5 Agents"></button>
+        <button class="nav-dot" data-target="module-3" data-tooltip="3. The LangGraph Brain" role="tab" aria-label="Module 3: The LangGraph Brain"></button>
+        <button class="nav-dot" data-target="module-4" data-tooltip="4. AST Code Map & Sandbox" role="tab" aria-label="Module 4: AST Code Map & Sandbox"></button>
+        <button class="nav-dot" data-target="module-5" data-tooltip="5. The Sovereign Gatekeeper" role="tab" aria-label="Module 5: The Sovereign Gatekeeper"></button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main">
+<section class="module" id="module-1">
+  <div class="module-header animate-in">
+    <div class="module-number">MODULE 01</div>
+    <h1 class="module-title">The Autonomous Coding Team</h1>
+    <p class="module-subtitle">What actually happens when an AI writes, runs, and repairs real code?</p>
+  </div>
+
+  <div class="screen-content">
+    <p class="lead-text animate-in">
+      Imagine you type: <em>"Hey, fix the bug where dividing by zero crashes our calculator app."</em>
+    </p>
+
+    <p class="body-text animate-in">
+      If you use a standard AI chat assistant, it gives you a friendly code snippet in markdown. But here is the catch: <strong>it has never run the code</strong>. It has no idea if the file exists, whether it broke twenty other files, or if the code even compiles.
+    </p>
+
+    <p class="body-text animate-in">
+      Our codebase is completely different. It is not a chatbot; it is an <strong>autonomous multi-agent engineering system</strong>. It treats software engineering like an elite <span class="term" data-def="A disciplined, synchronized team where each specialist has one hyper-focused job, coordinated by a central race director.">Formula 1 Pit Crew</span>: one specialist inspects the track, one plans the pit stop, one changes the tire, one inspects the engine telemetry, and an independent race marshal verifies safety before the car leaves pit lane.
+    </p>
+
+    <!-- Data Flow Animation -->
+    <div class="section-card animate-in">
+      <h3 class="card-title">Live Data Flow: A Task's Journey Through the System</h3>
+      <p class="card-caption">Watch how a single natural language request travels across specialist agents until an immutable release is sealed.</p>
+
+      <div class="flow-animation" data-steps='[
+        {"highlight":"flow-actor-1","label":"User submits natural language feature request or bug report"},
+        {"highlight":"flow-actor-2","label":"Manager explores codebase AST and creates structured plan","packet":true,"from":"actor-1","to":"actor-2"},
+        {"highlight":"flow-actor-3","label":"Coder writes surgical patch to disk using shadow files","packet":true,"from":"actor-2","to":"actor-3"},
+        {"highlight":"flow-actor-4","label":"Sandbox runs pytest in isolated Docker container","packet":true,"from":"actor-3","to":"actor-4"},
+        {"highlight":"flow-actor-5","label":"Independent Verifier cryptographically audits hashes and seals handover","packet":true,"from":"actor-4","to":"actor-5"}
+      ]'>
+        <div class="flow-actors">
+          <div class="flow-actor" id="flow-actor-1">
+            <div class="flow-actor-icon">👤</div>
+            <span>User Prompt</span>
+          </div>
+          <div class="flow-actor" id="flow-actor-2">
+            <div class="flow-actor-icon">📋</div>
+            <span>Manager</span>
+          </div>
+          <div class="flow-actor" id="flow-actor-3">
+            <div class="flow-actor-icon">💻</div>
+            <span>Coder</span>
+          </div>
+          <div class="flow-actor" id="flow-actor-4">
+            <div class="flow-actor-icon">🐳</div>
+            <span>Sandbox</span>
+          </div>
+          <div class="flow-actor" id="flow-actor-5">
+            <div class="flow-actor-icon">🛡️</div>
+            <span>Verifier</span>
+          </div>
+        </div>
+
+        <div class="flow-packet" id="flow-packet"></div>
+        <div class="flow-step-label" id="flow-label">Click &quot;Next Step&quot; to trace the execution flow</div>
+
+        <div class="flow-controls">
+          <button class="btn flow-next-btn">Next Step</button>
+          <button class="btn flow-reset-btn">Restart</button>
+          <span class="flow-progress"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aha Callout -->
+    <div class="callout callout-aha animate-in">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body">
+        <h4 class="callout-title">The "Aha!" Insight: The Vibe Coder's Secret Weapon</h4>
+        <p>
+          As someone building with AI, you don't need to write every line of Python syntax manually. But you <strong>must know the pipeline</strong>. When an AI coding tool hallucinates or gets stuck in a loop, asking it to "try again" repeats the same blind mistake. When you understand the separation between planning, coding, sandboxing, and verifying, you can steer the AI with precision: <em>"Stop rewriting the code; check the test runner traceback first!"</em>
+        </p>
+      </div>
+    </div>
+
+    <!-- Code <-> English Translation Block -->
+    <div class="translation-block animate-in">
+      <div class="translation-code">
+        <span class="translation-label">CODE (main.py)</span>
+        <pre><code><span class="code-line"><span class="code-comment"># Initializing the autonomous workflow</span></span>
+<span class="code-line">graph = create_coding_agent_graph(checkpointer=sqlite_saver)</span>
+<span class="code-line">initial_state = {</span>
+<span class="code-line">    <span class="code-string">"task_id"</span>: str(uuid.uuid4()),</span>
+<span class="code-line">    <span class="code-string">"prompt"</span>: user_prompt,</span>
+<span class="code-line">    <span class="code-string">"repo_path"</span>: os.path.abspath(target_repo),</span>
+<span class="code-line">    <span class="code-string">"max_iterations"</span>: 3</span>
+<span class="code-line">}</span>
+<span class="code-line">final_state = graph.invoke(initial_state)</span></code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">Build the graph workflow, connecting SQLite memory so progress is never lost if the machine restarts.</p>
+          <p class="tl">Create a fresh mission card with a unique ID and your plain English request.</p>
+          <p class="tl">Tell the agent exactly which folder on disk it is allowed to touch.</p>
+          <p class="tl">Set a hard limit of 3 repair attempts so the agent never burns infinite money in a loop.</p>
+          <p class="tl">Launch the autonomous team and wait for the independently verified result.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Quiz -->
+    <div class="quiz-container animate-in" id="quiz-m1">
+      <div class="quiz-question-block"
+           data-correct="option-b"
+           data-explanation-right="Spot on! When an AI grades its own homework, it suffers from severe confirmation bias. Separating code writing from test execution and verification is what makes this system dependable."
+           data-explanation-wrong="Not quite. The limitation isn't just speed or memory; it's confirmation bias. An AI that writes flawed code will happily write flawed tests that pass!">
+        <h3 class="quiz-question">Why shouldn't a single AI prompt write the code and declare itself done?</h3>
+        <div class="quiz-options">
+          <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>Because LLMs run out of memory if they write more than 50 lines of code.</span>
+          </button>
+          <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>Because a single model has confirmation bias: it assumes its code works without testing reality.</span>
+          </button>
+          <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>Because Python doesn't allow multiple functions inside a single prompt.</span>
+          </button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <button class="quiz-check-btn" onclick="checkQuiz('quiz-m1')">Check Answer</button>
+      <button class="quiz-reset-btn" onclick="resetQuiz('quiz-m1')">Try Again</button>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-2">
+  <div class="module-header animate-in">
+    <div class="module-number">MODULE 02</div>
+    <h1 class="module-title">Meet the 5 Agents</h1>
+    <p class="module-subtitle">How specialized roles turn chaotic LLMs into a disciplined engineering unit</p>
+  </div>
+
+  <div class="screen-content">
+    <p class="lead-text animate-in">
+      Why does our system use five separate agents instead of asking one big AI model to "do everything"?
+    </p>
+
+    <p class="body-text animate-in">
+      Think of a Hollywood movie set. You don't have the lead actor write the script, operate the boom mic, perform the stunts, and audit the legal clearances. If one person does all of that, the movie is a disaster. You have <span class="term" data-def="Dividing a complex system into distinct parts where each part handles one specific responsibility and cannot interfere with others.">separation of concerns</span>.
+    </p>
+
+    <!-- Group Chat Animation -->
+    <div class="section-card animate-in">
+      <h3 class="card-title">Live Agent Chat: Watching the Team in Action</h3>
+      <p class="card-caption">Click "Play All" or step through the chat to see how our agents talk, debate, and resolve a bug in real time.</p>
+
+      <div class="chat-window" id="chat-agents">
+        <div class="chat-messages">
+          <div class="chat-message" data-msg="0" data-sender="manager" style="display:none">
+            <div class="chat-avatar" style="background: #2A7B9B">📋</div>
+            <div class="chat-bubble">
+              <span class="chat-sender" style="color: #2A7B9B">Manager Agent</span>
+              <p>Team, incoming ticket: &quot;Dividing by zero crashes the calculation engine.&quot; I have explored the AST index. Target file: <code>calculator/core.py</code>. Acceptance criteria: Raise <code>ValueError(&apos;Cannot divide by zero&apos;)</code> and keep all existing tests green.</p>
+            </div>
+          </div>
+
+          <div class="chat-message" data-msg="1" data-sender="coder" style="display:none">
+            <div class="chat-avatar" style="background: #E06B56">💻</div>
+            <div class="chat-bubble">
+              <span class="chat-sender" style="color: #E06B56">Coder Agent</span>
+              <p>Got it! Reading function definition for <code>divide()</code> via AST slice. Writing patch to disk now...</p>
+            </div>
+          </div>
+
+          <div class="chat-message" data-msg="2" data-sender="testgen" style="display:none">
+            <div class="chat-avatar" style="background: #2D8B55">🧪</div>
+            <div class="chat-bubble">
+              <span class="chat-sender" style="color: #2D8B55">Test Generator Agent</span>
+              <p>I am independently writing test cases in <code>tests/test_calculator.py</code>. I will test division by 0, division by negative numbers, and very large floats.</p>
+            </div>
+          </div>
+
+          <div class="chat-message" data-msg="3" data-sender="sandbox" style="display:none">
+            <div class="chat-avatar" style="background: #7B52AB">🐳</div>
+            <div class="chat-bubble">
+              <span class="chat-sender" style="color: #7B52AB">Sandbox Runner</span>
+              <p>Ran pytest inside isolated Docker container... ❌ <strong>FAILED!</strong> <code>ZeroDivisionError: division by zero</code> occurred on line 42!</p>
+            </div>
+          </div>
+
+          <div class="chat-message" data-msg="4" data-sender="debugger" style="display:none">
+            <div class="chat-avatar" style="background: #D94F30">🔧</div>
+            <div class="chat-bubble">
+              <span class="chat-sender" style="color: #D94F30">Debugger Agent</span>
+              <p>Root cause identified! Coder, on line 42 you performed <code>result = a / b</code> before checking <code>if b == 0:</code>. Move the guard clause to line 38 before division!</p>
+            </div>
+          </div>
+
+          <div class="chat-message" data-msg="5" data-sender="coder" style="display:none">
+            <div class="chat-avatar" style="background: #E06B56">💻</div>
+            <div class="chat-bubble">
+              <span class="chat-sender" style="color: #E06B56">Coder Agent</span>
+              <p>Applied fix atomically to line 38 using shadow file replacement. Re-test please!</p>
+            </div>
+          </div>
+
+          <div class="chat-message" data-msg="6" data-sender="sandbox" style="display:none">
+            <div class="chat-avatar" style="background: #7B52AB">🐳</div>
+            <div class="chat-bubble">
+              <span class="chat-sender" style="color: #7B52AB">Sandbox Runner</span>
+              <p>Re-running pytest in Docker... ✅ <strong>ALL 146 TESTS PASSED</strong> in 1.34s with 0 errors!</p>
+            </div>
+          </div>
+
+          <div class="chat-message" data-msg="7" data-sender="reviewer" style="display:none">
+            <div class="chat-avatar" style="background: #D4A843">🕵️</div>
+            <div class="chat-bubble">
+              <span class="chat-sender" style="color: #D4A843">Reviewer Agent</span>
+              <p>Read-only audit complete. Clean git diff, no security anti-patterns, no extra files touched. I grant official approval! 🚀</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-typing" id="chat-typing" style="display:none">
+          <div class="chat-avatar" id="typing-avatar">🤖</div>
+          <div class="chat-typing-dots">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+
+        <div class="chat-controls">
+          <button class="btn chat-next-btn">Next Message</button>
+          <button class="btn chat-all-btn">Play All</button>
+          <button class="btn chat-reset-btn">Replay</button>
+          <span class="chat-progress"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code <-> English Translation Block -->
+    <div class="translation-block animate-in">
+      <div class="translation-code">
+        <span class="translation-label">CODE (agent/core/state.py)</span>
+        <pre><code><span class="code-line"><span class="code-keyword">class</span> <span class="code-function">ManagerPlan</span>(BaseModel):</span>
+<span class="code-line">    goal: str</span>
+<span class="code-line">    steps: List[str]</span>
+<span class="code-line">    target_files: List[str]</span>
+<span class="code-line">    acceptance_criteria: List[str]</span>
+<span class="code-line">    testing_strategy: str</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">class</span> <span class="code-function">ReviewResult</span>(BaseModel):</span>
+<span class="code-line">    approved: bool</span>
+<span class="code-line">    score: float</span>
+<span class="code-line">    blocking_issues: List[str]</span>
+<span class="code-line">    reviewed_file_hashes: Dict[str, str]</span></code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">The blueprint created by the Manager. It forbids the Coder from wandering into random files.</p>
+          <p class="tl">High-level goal and step-by-step instructions for the team.</p>
+          <p class="tl">The explicit list of allowed target files. Any other file edit is flagged as scope creep.</p>
+          <p class="tl">Clear rules the code must satisfy to be deemed acceptable.</p>
+          <p class="tl">The Reviewer's independent verdict: can approve or veto the release.</p>
+          <p class="tl">List of critical security or quality objections that must be fixed before release.</p>
+          <p class="tl">Digital fingerprints of every reviewed file, guaranteeing no sneaky edits happen later.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aha Callout -->
+    <div class="callout callout-tip animate-in">
+      <div class="callout-icon">🎯</div>
+      <div class="callout-body">
+        <h4 class="callout-title">Steering Tip for Vibe Coders</h4>
+        <p>
+          Notice that the <strong>Reviewer Agent</strong> is strictly <span class="term" data-def="A permission level where an agent can inspect and read files, but has no tools to modify or write files to disk.">read-only</span>. It does not have access to a file write tool! Why? Because if a reviewer can edit code, it will quietly try to patch its own objections, bypassing the test generator and breaking the safety net. Keep your reviewers read-only!
+        </p>
+      </div>
+    </div>
+
+    <!-- Interactive Quiz -->
+    <div class="quiz-container animate-in" id="quiz-m2">
+      <div class="quiz-question-block"
+           data-correct="option-c"
+           data-explanation-right="Exactly! The Reviewer has absolute veto power over security and quality. Even if tests pass, a security vulnerability or criteria violation blocks release."
+           data-explanation-wrong="Not quite. In our architecture, tests passing is not enough. The Reviewer checks security, style, and scope, and has sovereign veto power.">
+        <h3 class="quiz-question">Can the Reviewer reject code even if 100% of the unit tests pass?</h3>
+        <div class="quiz-options">
+          <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>No, if tests pass, the code is mathematically proven to be perfect.</span>
+          </button>
+          <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>No, the Manager always overrides the Reviewer automatically.</span>
+          </button>
+          <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>Yes, because code can pass tests while containing critical security holes or scope creep.</span>
+          </button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <button class="quiz-check-btn" onclick="checkQuiz('quiz-m2')">Check Answer</button>
+      <button class="quiz-reset-btn" onclick="resetQuiz('quiz-m2')">Try Again</button>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-3">
+  <div class="module-header animate-in">
+    <div class="module-number">MODULE 03</div>
+    <h1 class="module-title">The LangGraph Brain</h1>
+    <p class="module-subtitle">How graph state machines prevent AI from entering infinite loops</p>
+  </div>
+
+  <div class="screen-content">
+    <p class="lead-text animate-in">
+      Every developer who has played with AI agents has experienced the <strong>Infinite Loop of Despair</strong>.
+    </p>
+
+    <p class="body-text animate-in">
+      The AI tries to fix a bug. It makes a typo. It tries to fix the typo, but breaks another file. It tries to fix that, and before you know it, it has spent $80 in API tokens, deleted half your repository, and left you with completely broken code.
+    </p>
+
+    <p class="body-text animate-in">
+      To fix this, we built our workflow as a formal <span class="term" data-def="A mathematical structure made of nodes (actions) and directed edges (transitions) that strictly controls where execution can go next.">state graph</span> using <strong>LangGraph</strong>. Think of a busy railway switching yard: trains can only travel along laid tracks, signals prevent collisions, and the central switchboard routes each train according to strict rules.
+    </p>
+
+    <!-- Architecture Visual Pattern Cards -->
+    <div class="pattern-grid animate-in">
+      <div class="pattern-card">
+        <div class="pattern-icon">🛤️</div>
+        <h4 class="pattern-title">The Deterministic Spine</h4>
+        <p class="pattern-desc">The first steps (Explore &rarr; Plan &rarr; Code &rarr; Test &rarr; Sandbox) are 100% hardwired. The AI is never allowed to hallucinate early steps or skip writing tests.</p>
+      </div>
+
+      <div class="pattern-card">
+        <div class="pattern-icon">🔀</div>
+        <h4 class="pattern-title">Conditional Remediation Edges</h4>
+        <p class="pattern-desc">Only after real tests run does the Manager make a dynamic routing choice: route to Debugger on failure, or route to Reviewer on success.</p>
+      </div>
+
+      <div class="pattern-card">
+        <div class="pattern-icon">⏱️</div>
+        <h4 class="pattern-title">Centralized Retry Metering</h4>
+        <p class="pattern-desc">Every repair loop increments a single shared budget. Once <code>iteration_count >= 3</code>, the agent is blocked from looping and fails closed safely.</p>
+      </div>
+
+      <div class="pattern-card">
+        <div class="pattern-icon">💾</div>
+        <h4 class="pattern-title">SQLite WAL Checkpointing</h4>
+        <p class="pattern-desc">Every single step is saved to a persistent SQLite database with <span class="term" data-def="A high-performance database mode where changes are written sequentially so crashes never corrupt data.">WAL mode</span>. If your laptop loses power, it resumes right where it left off.</p>
+      </div>
+    </div>
+
+    <!-- Code <-> English Translation Block -->
+    <div class="translation-block animate-in">
+      <div class="translation-code">
+        <span class="translation-label">CODE (agent/core/graph.py)</span>
+        <pre><code><span class="code-line">DECISION_TO_NODE_MAP = {</span>
+<span class="code-line">    <span class="code-string">"delegate_coder"</span>: <span class="code-string">"coder"</span>,</span>
+<span class="code-line">    <span class="code-string">"delegate_debug"</span>: <span class="code-string">"debugger"</span>,</span>
+<span class="code-line">    <span class="code-string">"delegate_review"</span>: <span class="code-string">"reviewer"</span>,</span>
+<span class="code-line">    <span class="code-string">"finalize"</span>: <span class="code-string">"manager_finalize"</span>,</span>
+<span class="code-line">    <span class="code-string">"abort"</span>: <span class="code-string">"manager_finalize"</span></span>
+<span class="code-line">}</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">def</span> <span class="code-function">route_manager_decision</span>(state: AgentState):</span>
+<span class="code-line">    decision = state.get(<span class="code-string">"manager_decision"</span>)</span>
+<span class="code-line">    <span class="code-keyword">return</span> DECISION_TO_NODE_MAP.get(decision.next_action, <span class="code-string">"manager_finalize"</span>)</span></code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">A safe dictionary mapping the Manager's proposed English action to the exact next code node.</p>
+          <p class="tl">If tests failed, the Manager routes directly to the diagnostic Debugger.</p>
+          <p class="tl">If tests passed, the Manager routes to the adversarial Reviewer.</p>
+          <p class="tl">If all criteria are met, it routes to the sovereign Finalizer.</p>
+          <p class="tl">The routing function: looks up the action, and if the LLM hallucinated an invalid name, it safely falls back to finalization rather than crashing!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aha Callout -->
+    <div class="callout callout-aha animate-in">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body">
+        <h4 class="callout-title">The "Aha!" Insight: Why Centralized State Beats Message Passing</h4>
+        <p>
+          In rookie agent systems, Agent A texts Agent B, who texts Agent C, who texts Agent A. Soon, messages get duplicated, nobody knows who has the latest code, and state is lost. In our architecture, agents use a <strong>Blackboard State</strong>: they write their results to a central ledger (`AgentState`). Any agent can inspect history, diffs, and test results cleanly without telephone-game degradation.
+        </p>
+      </div>
+    </div>
+
+    <!-- Interactive Quiz -->
+    <div class="quiz-container animate-in" id="quiz-m3">
+      <div class="quiz-question-block"
+           data-correct="option-b"
+           data-explanation-right="Bingo! The centralized retry counter in manager_evaluate stops the bleeding. If a bug cannot be solved after 3 attempts, it routes to finalization, reports the failure honestly, and halts."
+           data-explanation-wrong="Not quite. The system does not loop indefinitely, nor does it ask the user on every try. The centralized iteration limit forces a graceful fail-closed halt.">
+        <h3 class="quiz-question">What prevents the agent from looping forever if an impossible bug is encountered?</h3>
+        <div class="quiz-options">
+          <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>Nothing — autonomous agents will run until the computer runs out of disk space.</span>
+          </button>
+          <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>The centralized retry budget forces a transition to manager_finalize when iteration_count reaches max_iterations.</span>
+          </button>
+          <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>The Coder agent deletes the test so that it can pass anyway.</span>
+          </button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <button class="quiz-check-btn" onclick="checkQuiz('quiz-m3')">Check Answer</button>
+      <button class="quiz-reset-btn" onclick="resetQuiz('quiz-m3')">Try Again</button>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-4">
+  <div class="module-header animate-in">
+    <div class="module-number">MODULE 04</div>
+    <h1 class="module-title">AST Code Map & Sandbox</h1>
+    <p class="module-subtitle">How the agent understands huge codebases and executes code without destroying your computer</p>
+  </div>
+
+  <div class="screen-content">
+    <p class="lead-text animate-in">
+      Here are the two biggest engineering hurdles in autonomous coding:
+    </p>
+
+    <div class="pattern-grid animate-in">
+      <div class="pattern-card">
+        <div class="pattern-icon">🗺️</div>
+        <h4 class="pattern-title">The Context Window Trap</h4>
+        <p class="pattern-desc">A real codebase has hundreds of files and tens of thousands of lines. If you stuff everything into the prompt, the AI gets confused, ignores instructions, and costs a fortune.</p>
+      </div>
+
+      <div class="pattern-card">
+        <div class="pattern-icon">☣️</div>
+        <h4 class="pattern-title">The Execution Hazard</h4>
+        <p class="pattern-desc">When an AI generates code, that code has to be executed to run unit tests. What if the AI generated an infinite loop, or a line that deletes your home directory?</p>
+      </div>
+    </div>
+
+    <p class="body-text animate-in">
+      We solved both problems with two foundational technologies: the <strong>AST (Abstract Syntax Tree)</strong> and an <strong>Isolated Docker Sandbox</strong>.
+    </p>
+
+    <!-- Code <-> English Translation Block -->
+    <div class="translation-block animate-in">
+      <div class="translation-code">
+        <span class="translation-label">CODE (agent/retrieval/ast_indexer.py)</span>
+        <pre><code><span class="code-line"><span class="code-keyword">import</span> ast</span>
+<span class="code-line">tree = ast.parse(file_content, filename=filepath)</span>
+<span class="code-line"><span class="code-keyword">for</span> node <span class="code-keyword">in</span> ast.walk(tree):</span>
+<span class="code-line">    <span class="code-keyword">if</span> isinstance(node, ast.FunctionDef):</span>
+<span class="code-line">        symbols[node.name] = {</span>
+<span class="code-line">            <span class="code-string">"line_start"</span>: node.lineno,</span>
+<span class="code-line">            <span class="code-string">"line_end"</span>: node.end_lineno,</span>
+<span class="code-line">            <span class="code-string">"args"</span>: [a.arg <span class="code-keyword">for</span> a <span class="code-keyword">in</span> node.args.args]</span>
+<span class="code-line">        }</span></code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">Use Python's built-in syntax engine to inspect the file without running it.</p>
+          <p class="tl">Convert the raw text into a structured tree of grammar concepts.</p>
+          <p class="tl">Walk down every branch of the code tree looking for function definitions.</p>
+          <p class="tl">Index the function's exact start line, end line, and parameter names.</p>
+          <p class="tl">Now, instead of sending a 2,000-line file to the AI, we can slice out just lines 42-65!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aha Callout -->
+    <div class="callout callout-aha animate-in">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body">
+        <h4 class="callout-title">The "Aha!" Insight: AST vs. Naive Search (Grep)</h4>
+        <p>
+          Why not just use regular text search for words like <code>def calculate</code>? Because regular search is blind. If the word <code>calculate</code> appears in a comment, an old docstring, or a variable name, text search gets tricked. An <span class="term" data-def="A structured grammar tree parsed by compilers that represents classes, functions, and scopes with 100% mathematical precision.">AST</span> understands Python grammar. It knows whether a function is inside a class, what decorators wrap it, and who calls it.
+        </p>
+      </div>
+    </div>
+
+    <!-- Sandboxing Security Checklist -->
+    <div class="section-card animate-in">
+      <h3 class="card-title">The Biosafety Cleanroom: How the Sandbox Protects You</h3>
+      <p class="card-caption">When pytest runs, it executes inside an ephemeral Docker container locked down with five strict shields:</p>
+
+      <div class="badge-grid">
+        <div class="badge-card">
+          <span class="badge badge-success">SHIELD 1</span>
+          <strong>Dropped Capabilities</strong>
+          <p>Runs with <code>--cap-drop=ALL</code> so generated code has zero administrator or kernel privileges.</p>
+        </div>
+        <div class="badge-card">
+          <span class="badge badge-success">SHIELD 2</span>
+          <strong>Network Blackout</strong>
+          <p>Runs with <code>--network=none</code> so tests cannot leak environment variables or call external webhooks.</p>
+        </div>
+        <div class="badge-card">
+          <span class="badge badge-success">SHIELD 3</span>
+          <strong>Read-Only Root</strong>
+          <p>Mounted with <code>--read-only</code> so the container OS cannot be modified or infected.</p>
+        </div>
+        <div class="badge-card">
+          <span class="badge badge-success">SHIELD 4</span>
+          <strong>Memory &amp; CPU Caps</strong>
+          <p>Capped at 512MB RAM and 1 core, preventing accidental infinite loops from freezing your machine.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Quiz -->
+    <div class="quiz-container animate-in" id="quiz-m4">
+      <div class="quiz-question-block"
+           data-correct="option-a"
+           data-explanation-right="Correct! AST indexing allows the system to pass only the exact 20-line function signature and body needed, cutting token spend by 95%."
+           data-explanation-wrong="Not quite. The primary purpose of AST indexing in our architecture is surgical code retrieval without passing entire 2,000-line files.">
+        <h3 class="quiz-question">How does AST indexing solve the context window overflow problem?</h3>
+        <div class="quiz-options">
+          <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>It maps exact function line boundaries, allowing the agent to slice and send only relevant snippets.</span>
+          </button>
+          <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>It compresses the entire codebase into a zip file and attaches it to the prompt.</span>
+          </button>
+          <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>It translates Python into assembly language before sending it to the model.</span>
+          </button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <button class="quiz-check-btn" onclick="checkQuiz('quiz-m4')">Check Answer</button>
+      <button class="quiz-reset-btn" onclick="resetQuiz('quiz-m4')">Try Again</button>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-5">
+  <div class="module-header animate-in">
+    <div class="module-number">MODULE 05</div>
+    <h1 class="module-title">The Sovereign Gatekeeper</h1>
+    <p class="module-subtitle">Why passing tests isn't enough, and how we guarantee tamper-proof releases</p>
+  </div>
+
+  <div class="screen-content">
+    <p class="lead-text animate-in">
+      Here is an uncomfortable truth about commercial AI coding tools:
+    </p>
+
+    <p class="body-text animate-in">
+      Almost all of them let the AI declare victory on its own. When the AI gets tired or confused, it simply outputs <code>"DONE! Everything works!"</code> and the pipeline ends. If a sneaky bug slipped through or an existing test was accidentally deleted, nobody notices until production goes down.
+    </p>
+
+    <p class="body-text animate-in">
+      In our architecture, the Manager LLM has <strong>zero authority to declare success</strong>. Success is decided solely by the <span class="term" data-def="A decoupled, non-LLM Python authority that independently validates test outputs, baseline regressions, syntax, and cryptographic hashes.">IndependentVerifier</span>.
+    </p>
+
+    <!-- The 4 Pillars Cards -->
+    <div class="section-card animate-in">
+      <h3 class="card-title">The Four Pillars of Sovereign Verification</h3>
+      <p class="card-caption">All four gates must pass with 100% mathematical evidence. If even one pillar wobbles, the release is rejected.</p>
+
+      <div class="pattern-grid">
+        <div class="pattern-card">
+          <div class="pattern-icon">🧪</div>
+          <h4 class="pattern-title">Pillar 1: Real Test Results</h4>
+          <p class="pattern-desc">All new unit tests must pass in the sandbox with exit code 0 and zero assertion errors.</p>
+        </div>
+
+        <div class="pattern-card">
+          <div class="pattern-icon">🛡️</div>
+          <h4 class="pattern-title">Pillar 2: Zero Baseline Regressions</h4>
+          <p class="pattern-desc">Every single pre-existing test that worked before the agent started must still pass. No deleted or skipped tests allowed!</p>
+        </div>
+
+        <div class="pattern-card">
+          <div class="pattern-icon">📐</div>
+          <h4 class="pattern-title">Pillar 3: AST Preservation</h4>
+          <p class="pattern-desc">Modified files are parsed by the AST compiler to guarantee 100% valid syntax and verify no existing public functions were removed.</p>
+        </div>
+
+        <div class="pattern-card">
+          <div class="pattern-icon">⚖️</div>
+          <h4 class="pattern-title">Pillar 4: Reviewer Approval</h4>
+          <p class="pattern-desc">The adversarial Reviewer Agent must have signed off with zero unresolved blocking security or quality issues.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- The TOCTOU Shield -->
+    <div class="callout callout-warning animate-in">
+      <div class="callout-icon">🚨</div>
+      <div class="callout-body">
+        <h4 class="callout-title">The TOCTOU Race Condition: The Split-Second Danger</h4>
+        <p>
+          What is <span class="term" data-def="Time-of-Check to Time-of-Use: A subtle race condition where a file is altered in the brief window between when it was verified and when it is packaged for deployment.">TOCTOU</span>? Imagine the verifier checks your files at 12:00:00. While the system spends 5 seconds compiling the final report, a background process or file watcher alters <code>app.py</code> at 12:00:03!
+        </p>
+        <p>
+          We defeated this with two safeguards:
+          <strong>1) Pre-report re-verification</strong> that regenerates the report if drift occurred, and
+          <strong>2) Atomic Immutable Handovers</strong>: packaging verified files into a sealed, read-only <code>.tar.gz</code> archive (with permissions locked to <code>chmod 0o444</code>) and sealed with a <span class="term" data-def="A cryptographic 256-bit hash that mathematically proves an archive has not been modified by a single byte.">SHA-256</span> digest. Downstream systems deploy from the sealed archive, permanently immune to working-tree drift!
+        </p>
+      </div>
+    </div>
+
+    <!-- Code <-> English Translation Block -->
+    <div class="translation-block animate-in">
+      <div class="translation-code">
+        <span class="translation-label">CODE (agent/verification/verifier.py)</span>
+        <pre><code><span class="code-line"><span class="code-keyword">def</span> <span class="code-function">create_immutable_handover</span>(self, manifest):</span>
+<span class="code-line">    archive_path = handover_dir / f<span class="code-string">"verified_handover_{digest[:12]}.tar.gz"</span></span>
+<span class="code-line">    <span class="code-keyword">with</span> tarfile.open(archive_path, <span class="code-string">"w:gz"</span>) <span class="code-keyword">as</span> tar:</span>
+<span class="code-line">        <span class="code-keyword">for</span> rel <span class="code-keyword">in</span> sorted(manifest.keys()):</span>
+<span class="code-line">            tar.add(self.repo_path / rel, arcname=rel)</span>
+<span class="code-line">    os.chmod(archive_path, 0o444)  <span class="code-comment"># Strip write bits</span></span>
+<span class="code-line">    artifact_hash = hashlib.sha256(archive_path.read_bytes()).hexdigest()</span>
+<span class="code-line">    <span class="code-keyword">return</span> str(archive_path), artifact_hash</span></code></pre>
+      </div>
+      <div class="translation-english">
+        <span class="translation-label">PLAIN ENGLISH</span>
+        <div class="translation-lines">
+          <p class="tl">Generate a sealed, permanent snapshot bundle of all verified repository files.</p>
+          <p class="tl">Create a compressed tarball named with the cryptographic fingerprint of the manifest.</p>
+          <p class="tl">Pack every verified file into the archive in deterministic alphabetical order.</p>
+          <p class="tl">Lock the operating system permissions to read-only (0o444) so no process can tamper with it.</p>
+          <p class="tl">Calculate the SHA-256 digital seal and return the unalterable release artifact!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Final Course Quiz -->
+    <div class="quiz-container animate-in" id="quiz-m5">
+      <div class="quiz-question-block"
+           data-correct="option-b"
+           data-explanation-right="Mastery achieved! Point-in-time checks only tell you what was true a second ago. Sealing the verified files into a read-only immutable bundle ensures downstream deployment receives the exact verified code without any live disk interference."
+           data-explanation-wrong="Not quite. Checking a mutable directory again doesn't stop a process from changing files right after that check! True safety requires packaging into an immutable, sealed artifact.">
+        <h3 class="quiz-question">Why is creating an immutable read-only archive (.tar.gz) stronger than just running another hash check?</h3>
+        <div class="quiz-options">
+          <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>Because zip files run faster in Python than normal folders.</span>
+          </button>
+          <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>Because hash checks only detect state at a point in time; an immutable sealed archive isolates the code from any subsequent disk changes.</span>
+          </button>
+          <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+            <div class="quiz-option-radio"></div>
+            <span>Because LLMs cannot read files unless they are zipped first.</span>
+          </button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <button class="quiz-check-btn" onclick="checkQuiz('quiz-m5')">Check Answer</button>
+      <button class="quiz-reset-btn" onclick="resetQuiz('quiz-m5')">Try Again</button>
+    </div>
+
+    <!-- Celebration Card -->
+    <div class="section-card animate-in" style="text-align: center; margin-top: var(--space-8);">
+      <div style="font-size: 3rem; margin-bottom: var(--space-2);">🎓</div>
+      <h3 class="card-title">You Have Mastered Autonomous Code Engineering!</h3>
+      <p class="body-text" style="max-width: 600px; margin: 0 auto var(--space-4);">
+        You now understand how the agents plan, code, test, debug, sandbox, and verify. You have the vocabulary and mental model to steer AI coding tools like a seasoned technical lead.
+      </p>
+      <p style="color: var(--color-accent); font-weight: 600;">Go build resilient software with confidence!</p>
+    </div>
+  </div>
+</section>
+  </main>
+
+</body>
+</html>

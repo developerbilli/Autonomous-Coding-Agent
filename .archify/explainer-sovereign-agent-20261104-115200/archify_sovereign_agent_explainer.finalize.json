@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "startedAt": "2026-11-04T06:24:19.094Z",
+  "specification": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/candidate.archify.md",
+    "sha256": "152699bfa9e1ed16e43928ce46aa33bd455bb659872b6e35688561b2411fb127",
+    "bytes": 4801
+  },
+  "artifact": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.html",
+    "sha256": "783660f477c210fcd4b1e09516b2cafb16ca92d8620bb6c37c50a617d5ba394a",
+    "bytes": 566669
+  },
+  "stages": {
+    "browser-check": {
+      "status": "not-run",
+      "execution": "not-requested"
+    },
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/Users/anusurya/.nvm/versions/node/v22.23.1/bin/node",
+        "/Users/anusurya/Desktop/projects/ai coding agent /.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "explainer",
+        "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/candidate.archify.md",
+        "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.html",
+        "--quality",
+        "showcase",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "152699bfa9e1ed16e43928ce46aa33bd455bb659872b6e35688561b2411fb127",
+          "bytes": 4801
+        },
+        "validation": {
+          "checksPassed": 4,
+          "checkCount": 4,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 318,
+      "command": [
+        "/Users/anusurya/.nvm/versions/node/v22.23.1/bin/node",
+        "/Users/anusurya/Desktop/projects/ai coding agent /.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "explainer",
+        "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/candidate.archify.md",
+        "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.html",
+        "--quality",
+        "showcase",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "20a664ff-08e7-4166-b325-6efd445be570",
+        "ok": true,
+        "command": "deliver",
+        "type": "explainer",
+        "input": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/candidate.archify.md",
+        "output": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.html",
+        "explainer": {
+          "preparedSha256": "61d61d83c14ea60932380b9182f5206359450733ac3e1cf4c01eda030a314718",
+          "dependencies": [
+            {
+              "kind": "diagram-spec",
+              "id": "gate-workflow",
+              "inline": true,
+              "sha256": "78ce8b8d14b1d647a0dba2fe0309bff8089837b0aa13ed5249e3903480aa5dab",
+              "bytes": 1196
+            }
+          ]
+        },
+        "specification": {
+          "sha256": "152699bfa9e1ed16e43928ce46aa33bd455bb659872b6e35688561b2411fb127",
+          "bytes": 4801
+        },
+        "artifact": {
+          "sha256": "783660f477c210fcd4b1e09516b2cafb16ca92d8620bb6c37c50a617d5ba394a",
+          "bytes": 566669
+        },
+        "validation": {
+          "checksPassed": 4,
+          "checkCount": 4,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 140,
+      "command": [
+        "/Users/anusurya/.nvm/versions/node/v22.23.1/bin/node",
+        "/Users/anusurya/Desktop/projects/ai coding agent /.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.html",
+        "family": "explainer",
+        "artifact": {
+          "sha256": "783660f477c210fcd4b1e09516b2cafb16ca92d8620bb6c37c50a617d5ba394a",
+          "bytes": 566669
+        },
+        "checks": [
+          {
+            "name": "explainer_structure",
+            "ok": true,
+            "details": [
+              "50 unique DOM IDs"
+            ]
+          },
+          {
+            "name": "explainer_payload_identity",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "explainer_dependencies",
+            "ok": true,
+            "details": [
+              "1 frozen dependencies"
+            ]
+          },
+          {
+            "name": "explainer_native_diagrams",
+            "ok": true,
+            "details": [
+              "gate-workflow: pass"
+            ]
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "issues": [],
+          "nativeDiagrams": [
+            {
+              "id": "gate-workflow",
+              "receipt": {
+                "ok": true,
+                "file": "/var/folders/_f/1cn4r8jn0hj6drs341lmbczc0000gq/T/archify-explainer-check-McDsBU/child.html",
+                "artifact": {
+                  "sha256": "1b73e441d8d06f182b7948ff231a596359d4c2720e818f8e80d8cc0cb23d96db",
+                  "bytes": 833113
+                },
+                "checks": [
+                  {
+                    "name": "single_svg",
+                    "ok": true,
+                    "details": [
+                      "found 1 <svg> block(s)"
+                    ]
+                  },
+                  {
+                    "name": "finite_svg",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "orthogonal_arrows",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "label_route_clearance",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_crossings",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_corridors",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "container_border_runs",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "route_rhythm",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "legend_clearance",
+                    "ok": true,
+                    "details": []
+                  }
+                ],
+                "composition": {
+                  "schemaVersion": 1,
+                  "profile": "showcase",
+                  "status": "pass",
+                  "summary": {
+                    "errors": 0,
+                    "warnings": 0
+                  },
+                  "metrics": {
+                    "properCrossings": 0,
+                    "resolvedCrossovers": 0,
+                    "ambiguousCorridors": 0,
+                    "arrowheadCollisions": 0,
+                    "containerBorderRuns": 0,
+                    "labelRouteClearanceIssues": 0,
+                    "labelCanvasOverflowIssues": 0,
+                    "minLabelRouteClearance": 68.6,
+                    "desktopReadabilityIssues": 0,
+                    "viewportHeightIssues": 0,
+                    "minProjectedNodeTextPx": 6.503496503496503,
+                    "maxBends": 0,
+                    "routesOverSuggestedBends": 0,
+                    "maxStretch": 1,
+                    "routesOverSuggestedStretch": 0,
+                    "minSegmentPx": 8,
+                    "minInteriorSegmentPx": null,
+                    "shortSegmentCount": 2,
+                    "shortEndpointSegmentCount": 2,
+                    "shortInteriorSegmentCount": 0,
+                    "microSegmentCount": 0
+                  },
+                  "suggestedLimits": {
+                    "bendsPerRelationship": 2,
+                    "stretch": 1.35,
+                    "segmentPx": 16,
+                    "microSegmentPx": 8
+                  },
+                  "routeReview": {
+                    "crossings": [],
+                    "detours": []
+                  },
+                  "leadingSpace": {
+                    "measured": false,
+                    "reviewSuggested": false
+                  },
+                  "desktopReadability": {
+                    "budgetBasis": "legacy-930",
+                    "readerContract": "declared-wide-v1",
+                    "availableDiagramWidth": 930,
+                    "actualBudgetPx": 930,
+                    "limit": "legacy",
+                    "requestedTargetPx": null,
+                    "requestedTargetMet": null,
+                    "hardFloorPx": 6,
+                    "hardFloorMet": true,
+                    "minimumOwner": {
+                      "kind": "edge",
+                      "id": "g1-to-g2-1",
+                      "from": "g1",
+                      "to": "g2"
+                    },
+                    "minimumSourceTextPx": 8,
+                    "minimumProjectedTextPx": 6.503496503496503,
+                    "semanticTextCount": 11
+                  },
+                  "issues": []
+                }
+              }
+            }
+          ]
+        },
+        "diagnostics": [],
+        "provenance": "current",
+        "deliveryReceiptId": "20a664ff-08e7-4166-b325-6efd445be570"
+      }
+    }
+  },
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  },
+  "diagnostics": [],
+  "evidence": {
+    "receipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.finalize.json",
+    "summaryReceipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "finishedAt": "2026-11-04T06:24:19.629Z",
+  "durationMs": 534,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-04T05:17:56.041Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

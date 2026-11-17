@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  agent-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coding-agent-engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+      - ALLOW_UNSAFE_HOST_FALLBACK=1
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-autonomous-coding-agent}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - checkpoints_data:/app/.checkpoints
+      - workspaces_data:/app/workspaces
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  sandbox-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.sandbox
+    container_name: coding-agent-sandbox
+    restart: "no"
+    network_mode: "none"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /run:rw,noexec,nosuid,size=16m
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+volumes:
+  checkpoints_data:
+    driver: local
+  workspaces_data:
+    driver: local
+

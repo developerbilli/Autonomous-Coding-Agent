@@ -1,0 +1,40 @@
+# ==============================================================================
+# Dedicated Hardened Sandbox Container for Autonomous AI Coding Agent
+# Implements strict unprivileged execution, non-root user, and minimal attack surface.
+# ==============================================================================
+
+FROM python:3.11-slim
+
+# Security: Install minimal testing packages, then remove package manager cache
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        gcc \
+        python3-dev && \
+    pip install --no-cache-dir \
+        pytest>=8.0.0 \
+        pydantic>=2.0.0 && \
+    apt-get purge -y gcc python3-dev && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Security: Create non-root unprivileged user and group (UID 1001)
+RUN groupadd -g 1001 sandboxgroup && \
+    useradd -u 1001 -g sandboxgroup -m -d /home/sandboxuser -s /bin/sh sandboxuser
+
+# Create workspace directory with non-root ownership
+RUN mkdir -p /workspace && \
+    chown -R sandboxuser:sandboxgroup /workspace /home/sandboxuser
+
+# Switch to non-root user permanently
+USER 1001:1001
+WORKDIR /workspace
+
+# Safe environment
+ENV PATH="/home/sandboxuser/.local/bin:${PATH}" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH="/workspace"
+
+ENTRYPOINT ["python3", "-m", "pytest"]
+CMD ["-v"]

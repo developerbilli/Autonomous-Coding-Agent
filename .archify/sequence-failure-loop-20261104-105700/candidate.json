@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Agent Failure & Remediation Loop Sequence",
+    "output": ".archify/sequence-failure-loop-20261104-105700/failure-loop.html",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    { "id": "manager", "type": "backend", "label": "Manager Planner", "sublabel": "Orchestrator & Lead" },
+    { "id": "coder", "type": "backend", "label": "Coder Agent", "sublabel": "Surgical Patch Engine" },
+    { "id": "sandbox", "type": "cloud", "label": "Execution Sandbox", "sublabel": "Docker Pytest Runner" },
+    { "id": "debugger", "type": "backend", "label": "Debugger Agent", "sublabel": "Root Cause SRE" }
+  ],
+  "segments": [
+    { "from": 140, "to": 260, "label": "Initial Attempt & Test Failure" },
+    { "from": 270, "to": 385, "label": "Root Cause Diagnosis & Remediation" },
+    { "from": 395, "to": 530, "label": "Closed-Loop Repair & Verification" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "manager", "to": "coder", "y": 160, "label": "dispatch ManagerPlan", "variant": "emphasis" },
+    { "id": "m2", "from": "coder", "to": "sandbox", "y": 195, "label": "apply patch & trigger pytest", "variant": "default" },
+    { "id": "m3", "from": "sandbox", "to": "manager", "y": 235, "label": "test report: FAILED (ZeroDivisionError)", "variant": "return" },
+    { "id": "m4", "from": "manager", "to": "debugger", "y": 290, "label": "delegate_debug: raw traceback", "variant": "emphasis" },
+    { "id": "m5", "from": "debugger", "to": "manager", "y": 345, "label": "DebugResult: root cause + fix plan", "variant": "return" },
+    { "id": "m6", "from": "manager", "to": "coder", "y": 415, "label": "delegate_coder: apply fix plan (iter=1)", "variant": "emphasis" },
+    { "id": "m7", "from": "coder", "to": "sandbox", "y": 460, "label": "atomic shadow swap & re-test", "variant": "default" },
+    { "id": "m8", "from": "sandbox", "to": "manager", "y": 505, "label": "test report: PASSED (146 green)", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "coder", "from": 155, "to": 200, "type": "backend" },
+    { "participant": "sandbox", "from": 190, "to": 240, "type": "cloud" },
+    { "participant": "manager", "from": 230, "to": 295, "type": "backend" },
+    { "participant": "debugger", "from": 285, "to": 350, "type": "backend" },
+    { "participant": "manager", "from": 345, "to": 420, "type": "backend" },
+    { "participant": "coder", "from": 415, "to": 465, "type": "backend" },
+    { "participant": "sandbox", "from": 455, "to": 510, "type": "cloud" },
+    { "participant": "manager", "from": 500, "to": 535, "type": "backend" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "1. Empirical Failure Capture",
+      "items": [
+        "Coder submits proposed patch to Execution Sandbox",
+        "Sandbox runs pytest inside Docker container (--cap-drop=ALL)",
+        "ZeroDivisionError caught empirically; Manager intercepts failure"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "2. AST Diagnostic Isolation",
+      "items": [
+        "Manager delegates raw pytest traceback to Debugger Agent",
+        "Debugger parses stack frame bottom-up to isolate line 42",
+        "Outputs actionable remediation plan without modifying files"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "3. Closed-Loop Remediation",
+      "items": [
+        "Manager meters retry budget: iteration_count = 1",
+        "Coder applies atomic shadow-file patch moving guard to line 38",
+        "Sandbox confirms 146 passed with 0 regressions, breaking the failure loop"
+      ]
+    }
+  ]
+}

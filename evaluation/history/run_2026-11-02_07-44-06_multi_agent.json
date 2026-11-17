@@ -1,0 +1,93 @@
+{
+  "timestamp": "2026-11-02T07:44:06Z",
+  "agent_mode": "multi_agent",
+  "total_tasks": 2,
+  "passed_tasks": 2,
+  "pass_rate_pct": 100.0,
+  "total_duration_seconds": 72.03,
+  "metrics": {
+    "task_success_rate": 100.0,
+    "test_pass_rate": 100.0,
+    "regression_rate": 0.0,
+    "review_rejection_rate": 0.0,
+    "retry_rate": 50.0,
+    "recovery_rate": 100.0,
+    "unrelated_change_rate": 0.0,
+    "pass_at_1": 50.0,
+    "pass_at_k": {
+      "1": 100.0,
+      "3": 100.0,
+      "5": 100.0
+    },
+    "avg_cost_per_task_usd": 0.0026,
+    "total_cost_usd": 0.0052,
+    "avg_duration_seconds": 35.99,
+    "p50_duration_seconds": 30.65,
+    "p90_duration_seconds": 41.331,
+    "p95_duration_seconds": 41.331
+  },
+  "category_breakdown": {
+    "basic_implementation": {
+      "total": 2,
+      "passed": 2,
+      "pass_rate": 100.0,
+      "avg_duration": 35.99056935310364
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "basic_01_api_pagination",
+      "category": "basic_implementation",
+      "title": "Collection API Pagination",
+      "agent_mode": "multi_agent",
+      "agent_outcome": "completed_successfully",
+      "task_succeeded": true,
+      "baseline_tests_passed": true,
+      "hidden_tests_passed": true,
+      "overall_pass": true,
+      "duration_seconds": 41.331,
+      "iteration_count": 2,
+      "tests_generated_count": 10,
+      "review_quality_score": 9.5,
+      "toctou_valid": true,
+      "baseline_regressions_count": 0,
+      "unrelated_files_count": 0,
+      "review_rejected": false,
+      "encountered_failure": true,
+      "recovered_from_failure": true,
+      "prompt_tokens": 3200,
+      "completion_tokens": 1300,
+      "estimated_cost_usd": 0.003312,
+      "langsmith_trace_id": "7be5bb36-a39a-4684-8968-37f42c606ea1",
+      "failure_reasons": [],
+      "summary": "\u2705 Task basic_01_api_pagination passed all gates and hidden tests."
+    },
+    {
+      "task_id": "basic_02_lru_cache",
+      "category": "basic_implementation",
+      "title": "LRU Cache with O(1) Operations",
+      "agent_mode": "multi_agent",
+      "agent_outcome": "completed_successfully",
+      "task_succeeded": true,
+      "baseline_tests_passed": true,
+      "hidden_tests_passed": true,
+      "overall_pass": true,
+      "duration_seconds": 30.65,
+      "iteration_count": 1,
+      "tests_generated_count": 6,
+      "review_quality_score": 10.0,
+      "toctou_valid": true,
+      "baseline_regressions_count": 0,
+      "unrelated_files_count": 0,
+      "review_rejected": false,
+      "encountered_failure": true,
+      "recovered_from_failure": true,
+      "prompt_tokens": 1600,
+      "completion_tokens": 650,
+      "estimated_cost_usd": 0.001855,
+      "langsmith_trace_id": "01d3dddf-3397-4770-a5a4-f7a7e6cf8f16",
+      "failure_reasons": [],
+      "summary": "\u2705 Task basic_02_lru_cache passed all gates and hidden tests."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b1bd5ee2-0d64-4417-9de4-1a72dd0d272c",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/architecture-langgraph-agent-workflow-20261104-104700/candidate.json",
+  "output": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/architecture-langgraph-agent-workflow-20261104-104700/langgraph-agent-workflow.html",
+  "specification": {
+    "sha256": "a33d7ff376358e74e0415cd7e269524f5dd046f3738460dcd8ae8d8dc5a59f3c",
+    "bytes": 4724
+  },
+  "artifact": {
+    "sha256": "0d6771a37487da8318af9f9193d2d1d53a90dcf307ae0fb31c12ca58bcdf7d1e",
+    "bytes": 857197
+  }
+}

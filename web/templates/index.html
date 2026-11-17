@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous AI Multi-Agent Coding System — Mission Control</title>
+    <meta name="description" content="Real Multi-Agent Orchestration with Manager/Planner, Coder, Test Generator, Reviewer, and Debugger agents sharing typed LangGraph state.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="brand-badge">
+                    <span class="brand-icon">⚡</span>
+                    <div class="brand-info">
+                        <h1 class="brand-title">Multi-Agent AI Engineering System</h1>
+                        <span class="brand-subtitle">5 Specialized Agents • LangGraph StateMachine • LangSmith Tracing</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div id="langsmith-badge" class="status-pill offline" title="LangSmith Tracing Status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">LangSmith: Checking...</span>
+                    <a id="langsmith-link" href="https://smith.langchain.com" target="_blank" rel="noopener" class="external-link" title="Open LangSmith Dashboard">↗</a>
+                </div>
+                <div id="llm-badge" class="status-pill online" title="LLM Provider & Model">
+                    <span class="status-dot"></span>
+                    <span id="llm-status-text" class="status-text">LLM: Google Gemini</span>
+                </div>
+                <div class="status-pill sandbox-pill" title="Execution Sandbox">
+                    <span class="pill-icon">🛡️</span>
+                    <span>Sandbox: Pytest Subprocess</span>
+                </div>
+                <a href="/course" target="_blank" class="status-pill" style="text-decoration: none; color: inherit; border-color: rgba(99, 102, 241, 0.4); cursor: pointer;" title="Open Interactive Educational Course">
+                    <span class="pill-icon">🎓</span>
+                    <span>Interactive Course</span> <span style="font-size: 0.75rem; opacity: 0.7;">↗</span>
+                </a>
+                <div id="agent-state-pill" class="status-pill state-idle">
+                    <span class="pill-pulse"></span>
+                    <span id="agent-state-text">Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="main-grid">
+            <!-- Left Column: Mission Control -->
+            <aside class="control-panel glass-panel">
+                <div class="panel-header">
+                    <h2>Mission Control</h2>
+                    <span class="badge-tag">5-Agent Orchestration</span>
+                </div>
+
+                <form id="agent-form" class="config-form" onsubmit="return false;">
+                    <!-- Architecture Mode Selection -->
+                    <div class="form-group">
+                        <label for="arch-mode">Architecture Mode</label>
+                        <select id="arch-mode" class="mode-select">
+                            <option value="multi_agent" selected>👑 Multi-Agent Orchestration (5 Specialized Agents)</option>
+                            <option value="single_agent_baseline">🤖 Single-Agent Baseline (Monolithic)</option>
+                        </select>
+                    </div>
+
+                    <!-- Repository Ingestion Source Selector -->
+                    <div class="form-group source-selector-group">
+                        <label>Repository Ingestion Source</label>
+                        <div class="source-tabs">
+                            <button type="button" class="source-tab active" data-source="local">📁 Local Path</button>
+                            <button type="button" class="source-tab" data-source="github">🌐 GitHub URL</button>
+                            <button type="button" class="source-tab" data-source="zip">📦 Upload ZIP</button>
+                            <button type="button" class="source-tab" data-source="greenfield">🌱 From Scratch</button>
+                        </div>
+
+                        <!-- Source Pane 1: Local Path -->
+                        <div id="source-pane-local" class="source-pane">
+                            <div class="input-header-row">
+                                <span class="input-sublabel">Filesystem Path</span>
+                                <button type="button" id="btn-use-mock" class="text-link-btn">Use Calculator Repo</button>
+                            </div>
+                            <div class="input-wrapper">
+                                <span class="input-icon">📁</span>
+                                <input type="text" id="repo-path" value="calculator_repo" placeholder="/path/to/repository">
+                            </div>
+                            <div class="checkbox-container sub-checkbox" style="margin-top: 0.35rem;">
+                                <label class="custom-checkbox">
+                                    <input type="checkbox" id="isolate-local-check">
+                                    <span class="checkmark"></span>
+                                    <span class="checkbox-text" style="font-size: 0.75rem;">Copy-on-Write: Run in isolated snapshot</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Source Pane 2: GitHub URL -->
+                        <div id="source-pane-github" class="source-pane" style="display: none;">
+                            <div class="input-wrapper">
+                                <span class="input-icon">🌐</span>
+                                <input type="url" id="github-url" placeholder="https://github.com/username/repository">
+                            </div>
+                            <div class="input-grid-2">
+                                <div class="input-wrapper">
+                                    <span class="input-icon">🌿</span>
+                                    <input type="text" id="github-branch" value="main" placeholder="Branch (main)">
+                                </div>
+                                <div class="input-wrapper">
+                                    <span class="input-icon">🔑</span>
+                                    <input type="password" id="github-token" placeholder="Optional Token">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Source Pane 3: Upload ZIP -->
+                        <div id="source-pane-zip" class="source-pane" style="display: none;">
+                            <div class="input-wrapper file-input-wrapper">
+                                <input type="file" id="zip-file" accept=".zip">
+                            </div>
+                            <div class="input-wrapper" style="margin-top: 0.45rem;">
+                                <span class="input-icon">🏷️</span>
+                                <input type="text" id="zip-project-name" placeholder="Optional Project Name (e.g. my-app)">
+                            </div>
+                        </div>
+
+                        <!-- Source Pane 4: Greenfield (From Scratch) -->
+                        <div id="source-pane-greenfield" class="source-pane" style="display: none;">
+                            <div class="input-wrapper">
+                                <span class="input-icon">🌱</span>
+                                <input type="text" id="greenfield-name" placeholder="Project Name (e.g. quantum-calc)">
+                            </div>
+                            <p class="source-hint">⚡ Initializes a clean Python workspace with <code>src/</code>, <code>tests/</code>, and <code>pyproject.toml</code>. Agents will build from scratch.</p>
+                        </div>
+                    </div>
+
+                    <!-- Task Requirement -->
+                    <div class="form-group">
+                        <label for="task-prompt">Coding Task Requirement</label>
+                        <textarea id="task-prompt" rows="3" placeholder="Describe the software engineering task..." required>Complete Calculator implementation: add division with zero check, power, square root, and factorial</textarea>
+                        
+                        <!-- Quick Prompts Chips -->
+                        <div class="quick-chips">
+                            <span class="chip-label">Presets:</span>
+                            <button type="button" class="preset-chip highlight-chip" data-task="Self-Healing Demo: Fix division by zero and negative square root in Calculator" data-type="bug_fix" data-demo="true">⚡ Self-Healing Demo</button>
+                            <button type="button" class="preset-chip" data-task="Complete Calculator implementation: add division with zero check, power, square root, and factorial" data-type="feature_addition">Complete All</button>
+                            <button type="button" class="preset-chip" data-task="Implement safe division in Calculator with zero division check" data-type="bug_fix">Safe Division</button>
+                            <button type="button" class="preset-chip" data-task="Implement power and square root operations in Calculator" data-type="feature_addition">Power & Root</button>
+                        </div>
+
+                        <!-- Self-Healing Demo Checkbox -->
+                        <div class="checkbox-container">
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="demo-mode-check">
+                                <span class="checkmark"></span>
+                                <span class="checkbox-text">Demonstrate Self-Healing & Reviewer Gate (simulate initial flaw)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Task Type & Max Iterations -->
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="task-type">Task Type</label>
+                            <select id="task-type">
+                                <option value="bug_fix" selected>Bug Fix</option>
+                                <option value="feature_addition">Feature</option>
+                                <option value="refactor">Refactor</option>
+                                <option value="test_generation">Test Gen</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group half">
+                            <label for="max-iter">
+                                <span>Max Iterations</span>
+                                <span id="iter-val" class="highlight-val">3</span>
+                            </label>
+                            <input type="range" id="max-iter" min="1" max="5" value="3" step="1">
+                        </div>
+                    </div>
+
+                    <!-- Launch CTA -->
+                    <button type="button" id="btn-launch" class="btn-primary">
+                        <span class="btn-glow"></span>
+                        <span class="btn-icon">🚀</span>
+                        <span class="btn-text">Launch Autonomous Workflow</span>
+                    </button>
+
+                    <!-- Run Benchmark CTA -->
+                    <button type="button" id="btn-run-benchmark" class="btn-secondary benchmark-btn" style="width: 100%; margin-top: 10px;">
+                        <span>🔬 Run Empirical Benchmark (Baseline vs Multi-Agent)</span>
+                    </button>
+                </form>
+
+                <!-- System Highlights Card -->
+                <div class="info-card">
+                    <div class="info-card-title">💡 Why 5 Specialized Agents?</div>
+                    <p class="info-explain">
+                        <strong>1. Manager:</strong> Decomposes goals & routes decisions.<br>
+                        <strong>2. Coder:</strong> Synthesizes surgical implementations.<br>
+                        <strong>3. Test-Gen:</strong> Autonomously creates edge-case tests.<br>
+                        <strong>4. Debugger:</strong> Isolates root causes via stack traces.<br>
+                        <strong>5. Reviewer:</strong> Adversarial quality & security gate.
+                    </p>
+                </div>
+            </aside>
+
+            <!-- Right Column: Pipeline & Results -->
+            <section class="workspace-area">
+                <!-- Visual StateGraph Pipeline with LangSmith Inspector Trigger -->
+                <div class="pipeline-card glass-panel">
+                    <div class="card-header-clean">
+                        <div>
+                            <h3>LangGraph Multi-Agent Orchestration Flow</h3>
+                            <span class="header-hint">💡 Click any agent below to inspect its Structured JSON Output (LangSmith style)</span>
+                        </div>
+                        <span id="pipeline-status" class="pipeline-sub">Waiting for invocation</span>
+                    </div>
+
+                    <div class="node-flow-container">
+                        <!-- Step 1: AST Indexer -->
+                        <div class="flow-node clickable" id="node-explore_repo" data-node="explore_repo" title="Click to inspect AST symbol extraction">
+                            <div class="node-icon">🔍</div>
+                            <div class="node-title">AST Indexer</div>
+                            <div class="node-status">Pending</div>
+                            <div class="node-latency" id="latency-explore_repo">-- ms</div>
+                        </div>
+                        <div class="flow-arrow">➔</div>
+
+                        <!-- Step 2: Manager/Planner -->
+                        <div class="flow-node clickable" id="node-manager_planner" data-node="manager_planner" title="Click to inspect ManagerPlan">
+                            <div class="node-icon">👑</div>
+                            <div class="node-title">Manager / Plan</div>
+                            <div class="node-status">Pending</div>
+                            <div class="node-latency" id="latency-manager_planner">-- ms</div>
+                        </div>
+                        <div class="flow-arrow">➔</div>
+
+                        <!-- Step 3: Coder Specialist -->
+                        <div class="flow-node clickable" id="node-coder" data-node="coder" title="Click to inspect CoderResult">
+                            <div class="node-icon">💻</div>
+                            <div class="node-title">Coder Agent</div>
+                            <div class="node-status">Pending</div>
+                            <div class="node-latency" id="latency-coder">-- ms</div>
+                        </div>
+                        <div class="flow-arrow">➔</div>
+
+                        <!-- Step 4: Test Gen Specialist -->
+                        <div class="flow-node clickable" id="node-test_generator" data-node="test_generator" title="Click to inspect TestGenResult">
+                            <div class="node-icon">🧪</div>
+                            <div class="node-title">Test-Gen Agent</div>
+                            <div class="node-status">Pending</div>
+                            <div class="node-latency" id="latency-test_generator">-- ms</div>
+                        </div>
+                        <div class="flow-arrow">➔</div>
+
+                        <!-- Step 5: Sandbox Runner -->
+                        <div class="flow-node clickable" id="node-sandbox_runner" data-node="sandbox_runner" title="Click to inspect Sandbox Test Results">
+                            <div class="node-icon">🛡️</div>
+                            <div class="node-title">Sandbox Pytest</div>
+                            <div class="node-status">Pending</div>
+                            <div class="node-latency" id="latency-sandbox_runner">-- ms</div>
+                        </div>
+                        <div class="flow-arrow">➔</div>
+
+                        <!-- Step 6: Debugger Specialist -->
+                        <div class="flow-node loop-node clickable" id="node-debugger" data-node="debugger" title="Click to inspect DebugResult root cause diagnosis">
+                            <div class="node-icon">🔄</div>
+                            <div class="node-title">Debugger Agent</div>
+                            <div class="node-status">Pending</div>
+                            <div class="node-latency" id="latency-debugger">-- ms</div>
+                        </div>
+                        <div class="flow-arrow">➔</div>
+
+                        <!-- Step 7: Reviewer Auditor -->
+                        <div class="flow-node clickable" id="node-reviewer" data-node="reviewer" title="Click to inspect ReviewResult adversarial audit">
+                            <div class="node-icon">🛡️</div>
+                            <div class="node-title">Reviewer Agent</div>
+                            <div class="node-status">Pending</div>
+                            <div class="node-latency" id="latency-reviewer">-- ms</div>
+                        </div>
+                        <div class="flow-arrow">➔</div>
+
+                        <!-- Step 8: Manager Finalize -->
+                        <div class="flow-node clickable" id="node-manager_finalize" data-node="manager_finalize" title="Click to inspect verified outcome report">
+                            <div class="node-icon">✅</div>
+                            <div class="node-title">Outcome Report</div>
+                            <div class="node-status">Pending</div>
+                            <div class="node-latency" id="latency-manager_finalize">-- ms</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Card -->
+                <div class="results-card glass-panel">
+                    <nav class="tab-nav">
+                        <button type="button" class="tab-btn active" data-tab="tab-terminal">
+                            <span>📟 Live Terminal</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-symbols">
+                            <span>🧩 AST Symbol Map</span>
+                            <span id="symbol-count-pill" class="tab-pill">0</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-tests">
+                            <span>🧪 Sandbox & Tests</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-report">
+                            <span>📋 Final Report</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="tab-benchmark">
+                            <span>🔬 Baseline vs Multi-Agent</span>
+                        </button>
+                    </nav>
+
+                    <div class="tab-body">
+                        <!-- Tab 1: Terminal -->
+                        <div id="tab-terminal" class="tab-pane active">
+                            <div class="terminal-toolbar">
+                                <div class="terminal-dots">
+                                    <span class="dot red"></span>
+                                    <span class="dot yellow"></span>
+                                    <span class="dot green"></span>
+                                </div>
+                                <span class="terminal-title">agents@langgraph:~$ stream-orchestration-events</span>
+                                <button type="button" id="btn-clear-logs" class="terminal-action-btn">Clear Logs</button>
+                            </div>
+                            <div id="terminal-feed" class="terminal-feed">
+                                <div class="terminal-line system">
+                                    <span class="time">[00:00:00]</span>
+                                    <span class="msg">5-Agent Multi-Agent Orchestration Ready. Click any workflow node above to inspect its structured output.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: AST Symbols -->
+                        <div id="tab-symbols" class="tab-pane">
+                            <div class="symbols-toolbar">
+                                <input type="text" id="symbol-filter" placeholder="Search functions, classes, methods..." class="search-input">
+                                <button type="button" id="btn-refresh-symbols" class="btn-secondary">Scan AST Now</button>
+                            </div>
+                            <div id="symbols-container" class="symbols-grid">
+                                <div class="empty-state">No symbols indexed yet. Click "Scan AST Now" or launch the agent.</div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Sandbox Tests -->
+                        <div id="tab-tests" class="tab-pane">
+                            <div id="test-status-banner" class="test-banner pending">
+                                <div class="test-icon">⏳</div>
+                                <div class="test-info">
+                                    <h4>No test suite executed yet</h4>
+                                    <p>Run the agent to execute pytest in the isolated sandbox environment.</p>
+                                </div>
+                            </div>
+                            <div class="output-preview">
+                                <div class="preview-header">Pytest Sandbox Output</div>
+                                <pre id="pytest-output" class="code-block">Waiting for test run...</pre>
+                            </div>
+                        </div>
+
+                        <!-- Tab 4: Final Report -->
+                        <div id="tab-report" class="tab-pane">
+                            <div id="report-container" class="report-content">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📊</div>
+                                    <h3>Verification Report Pending</h3>
+                                    <p>The report summarizing all changed files, test executions, and diffs will appear here once the agent completes.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 5: Benchmark Matrix -->
+                        <div id="tab-benchmark" class="tab-pane">
+                            <div class="benchmark-container">
+                                <div class="benchmark-header">
+                                    <h3>🔬 Empirical Benchmark: Single-Agent Baseline vs 5-Agent Multi-Agent</h3>
+                                    <p class="benchmark-sub">Measures why 5 specialized agents are necessary and how they improve task success over the single-agent baseline.</p>
+                                </div>
+                                <div id="benchmark-results-table">
+                                    <div class="empty-state">
+                                        <p>Click <strong>"🔬 Run Empirical Benchmark"</strong> in the left panel to execute the side-by-side comparative evaluation.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- LangSmith-Style Node Inspector Drawer -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="node-inspector-drawer" class="node-drawer">
+        <div class="drawer-header">
+            <div class="drawer-title-group">
+                <span id="drawer-node-icon" class="drawer-icon">🔍</span>
+                <div>
+                    <h3 id="drawer-node-name">explore_repo</h3>
+                    <span id="drawer-node-type" class="drawer-sub">LangGraph StateNode</span>
+                </div>
+            </div>
+            <div class="drawer-actions">
+                <span id="drawer-node-latency" class="badge-latency">⏱️ -- ms</span>
+                <span id="drawer-node-status" class="badge-status">PENDING</span>
+                <button type="button" id="btn-close-drawer" class="btn-icon-close" title="Close Drawer">✕</button>
+            </div>
+        </div>
+
+        <div class="drawer-tabs">
+            <button type="button" class="drawer-tab active" data-drawer-tab="drawer-pane-inputs">📥 Inputs (JSON)</button>
+            <button type="button" class="drawer-tab" data-drawer-tab="drawer-pane-outputs">📤 Outputs (JSON)</button>
+            <button type="button" class="drawer-tab" data-drawer-tab="drawer-pane-meta">ℹ️ Execution Metadata</button>
+        </div>
+
+        <div class="drawer-body">
+            <div id="drawer-pane-inputs" class="drawer-pane active">
+                <pre id="drawer-json-inputs" class="json-code">Waiting for node execution...</pre>
+            </div>
+            <div id="drawer-pane-outputs" class="drawer-pane">
+                <pre id="drawer-json-outputs" class="json-code">Waiting for node execution...</pre>
+            </div>
+            <div id="drawer-pane-meta" class="drawer-pane">
+                <div id="drawer-meta-content" class="meta-list"></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Custom JS -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

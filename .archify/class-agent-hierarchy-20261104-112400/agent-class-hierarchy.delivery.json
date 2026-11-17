@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "49e80510-4943-4fa3-86f5-f32efa56154a",
+  "status": "current",
+  "command": "deliver",
+  "type": "class",
+  "input": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/class-agent-hierarchy-20261104-112400/candidate.json",
+  "output": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/class-agent-hierarchy-20261104-112400/agent-class-hierarchy.html",
+  "specification": {
+    "sha256": "f1f7c6a35a4276b2fdd11409be1b6d4ab43652aec1af82c6c02792f5e978d326",
+    "bytes": 6806
+  },
+  "artifact": {
+    "sha256": "40b8efd25c0065065f3381d5bfeb3a60293737d359f25a7bc7b9ffa4b0e3389d",
+    "bytes": 868567
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Autonomous AI Coding Agent: LangGraph Architecture",
+    "output": ".archify/architecture-langgraph-agent-workflow-20261104-104700/langgraph-agent-workflow.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "intake", "type": "external", "label": "Task Intake", "sublabel": "Natural Language Request", "pos": [40, 200], "size": [140, 60] },
+    { "id": "sqlite", "type": "database", "label": "SQLite Checkpointer", "sublabel": "WAL State Persistence", "pos": [240, 360], "size": [150, 60], "tag": "thread_id session" },
+    { "id": "ast", "type": "backend", "label": "ASTIndexer", "sublabel": "Symbol & Call Graph Map", "pos": [240, 60], "size": [150, 60], "tag": "ast.parse slicing" },
+    { "id": "orchestrator", "type": "backend", "label": "LangGraph StateGraph", "sublabel": "State Management Engine", "pos": [240, 200], "size": [150, 65], "tag": "Hybrid Topology" },
+    { "id": "manager", "type": "backend", "label": "Manager Planner", "sublabel": "Goal Decomposition", "pos": [460, 60], "size": [150, 60], "tag": "ManagerPlan" },
+    { "id": "coder", "type": "backend", "label": "Coder Agent", "sublabel": "Surgical Code Patching", "pos": [460, 200], "size": [150, 60], "tag": "Atomic File Replace" },
+    { "id": "testgen", "type": "backend", "label": "Test Generator", "sublabel": "Independent Pytest Gen", "pos": [460, 360], "size": [150, 60], "tag": "TestGenResult" },
+    { "id": "sandbox", "type": "cloud", "label": "Execution Sandbox", "sublabel": "Isolated Pytest Runner", "pos": [680, 360], "size": [150, 60], "tag": "--cap-drop=ALL" },
+    { "id": "debugger", "type": "backend", "label": "Debugger Agent", "sublabel": "Root Cause Diagnosis", "pos": [680, 200], "size": [150, 60], "tag": "Closed-Loop Repair" },
+    { "id": "reviewer", "type": "security", "label": "Reviewer Agent", "sublabel": "Adversarial Code Audit", "pos": [680, 60], "size": [150, 60], "tag": "Read-Only" },
+    { "id": "verifier", "type": "security", "label": "Independent Verifier", "sublabel": "4 Pillars & TOCTOU Audit", "pos": [900, 200], "size": [150, 65], "tag": "Sovereign Authority" },
+    { "id": "handover", "type": "external", "label": "Immutable Release", "sublabel": "verified_handover.tar.gz", "pos": [900, 360], "size": [150, 60], "tag": "0o444 + SHA-256" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "LangGraph Orchestration & State Core", "wraps": ["ast", "orchestrator", "sqlite"] },
+    { "kind": "region", "label": "Specialist Agent & Execution Layer", "wraps": ["manager", "coder", "testgen", "reviewer", "debugger", "sandbox"] },
+    { "kind": "security-group", "label": "Sovereign Verification & Release Vault", "wraps": ["verifier", "handover"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "intake", "to": "orchestrator", "label": "Task Prompt", "variant": "emphasis" },
+    { "id": "c2", "from": "orchestrator", "to": "sqlite", "label": "checkpoint WAL" },
+    { "id": "c3", "from": "orchestrator", "to": "ast", "label": "explore repo" },
+    { "id": "c4", "from": "ast", "to": "manager", "label": "AST outline" },
+    { "id": "c5", "from": "manager", "to": "coder", "label": "ManagerPlan" },
+    { "id": "c6", "from": "coder", "to": "testgen", "label": "modified files" },
+    { "id": "c7", "from": "testgen", "to": "sandbox", "label": "run pytest", "variant": "emphasis" },
+    { "id": "c8", "from": "sandbox", "to": "debugger", "label": "traceback on failure", "variant": "dashed" },
+    { "id": "c9", "from": "debugger", "to": "coder", "label": "remediation plan", "variant": "dashed" },
+    { "id": "c10", "from": "sandbox", "to": "reviewer", "label": "test report (pass)" },
+    { "id": "c11", "from": "reviewer", "to": "verifier", "label": "approval review", "variant": "security" },
+    { "id": "c12", "from": "verifier", "to": "handover", "label": "seal bundle", "variant": "security" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "LangGraph State Core", "items": ["Coordinates 5 specialist agents with deterministic spine", "Transactional SQLite WAL checkpointing for crash-recovery", "Shared blackboard AgentState with Pydantic validation"] },
+    { "dot": "emerald", "title": "Closed-Loop Remediation", "items": ["Isolated Docker execution sandbox with network blackout", "Automated Debugger diagnoses stack traces and guides Coder", "Centralized retry budget prevents infinite loops"] },
+    { "dot": "rose", "title": "Sovereign Verification", "items": ["Decoupled IndependentVerifier enforces 4 non-negotiable pillars", "Pre- and post-report manifest checks prevent TOCTOU race drift", "Cryptographic handover: sealed read-only tar.gz with SHA-256 seal"] }
+  ]
+}

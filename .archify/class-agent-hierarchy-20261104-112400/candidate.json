@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "diagram_type": "class",
+  "meta": {
+    "title": "Agent & Pydantic Contract Class Hierarchy",
+    "subtitle": "Specialist agents inherit from BaseAgent and emit strongly-typed Pydantic contracts into AgentState",
+    "output": ".archify/class-agent-hierarchy-20261104-112400/agent-class-hierarchy.html",
+    "quality_profile": "showcase"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "types": [
+    {
+      "id": "base_agent",
+      "label": "BaseAgent",
+      "kind": "abstract",
+      "sublabel": "Abstract agent foundation",
+      "row": 0,
+      "col": 1,
+      "attributes": [
+        { "name": "model_name", "type": "str", "visibility": "public" },
+        { "name": "system_prompt", "type": "str", "visibility": "protected" }
+      ],
+      "methods": [
+        { "name": "execute", "parameters": "state: AgentState", "returns": "Dict[str, Any]", "visibility": "public", "abstract": true }
+      ]
+    },
+    {
+      "id": "manager_agent",
+      "label": "ManagerPlannerAgent",
+      "kind": "class",
+      "sublabel": "Lead orchestrator",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        { "name": "max_iterations", "type": "int", "visibility": "public" }
+      ],
+      "methods": [
+        { "name": "create_plan", "parameters": "task: str", "returns": "ManagerPlan", "visibility": "public" },
+        { "name": "evaluate_and_route", "parameters": "state", "returns": "ManagerDecision", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "coder_agent",
+      "label": "CoderAgent",
+      "kind": "class",
+      "sublabel": "Surgical code writer",
+      "row": 1,
+      "col": 1,
+      "attributes": [
+        { "name": "patcher", "type": "AtomicPatcher", "visibility": "private" }
+      ],
+      "methods": [
+        { "name": "generate_code", "parameters": "state", "returns": "CoderResult", "visibility": "public" },
+        { "name": "apply_remediation", "parameters": "state, plan", "returns": "CoderResult", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "reviewer_agent",
+      "label": "ReviewerAgent",
+      "kind": "class",
+      "sublabel": "Adversarial security critic",
+      "row": 1,
+      "col": 2,
+      "attributes": [
+        { "name": "strictness", "type": "float", "visibility": "public" }
+      ],
+      "methods": [
+        { "name": "review_code", "parameters": "diff, context", "returns": "ReviewResult", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "manager_plan",
+      "label": "ManagerPlan",
+      "kind": "record",
+      "sublabel": "Pydantic contract",
+      "row": 2,
+      "col": 0,
+      "attributes": [
+        { "name": "goal", "type": "str", "visibility": "public" },
+        { "name": "subtasks", "type": "List[str]", "visibility": "public" },
+        { "name": "acceptance_criteria", "type": "List[str]", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "coder_result",
+      "label": "CoderResult",
+      "kind": "record",
+      "sublabel": "Pydantic contract",
+      "row": 2,
+      "col": 1,
+      "attributes": [
+        { "name": "files_modified", "type": "List[str]", "visibility": "public" },
+        { "name": "patches", "type": "Dict[str, str]", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "review_result",
+      "label": "ReviewResult",
+      "kind": "record",
+      "sublabel": "Pydantic contract",
+      "row": 2,
+      "col": 2,
+      "attributes": [
+        { "name": "approved", "type": "bool", "visibility": "public" },
+        { "name": "quality_score", "type": "float", "visibility": "public" },
+        { "name": "reviewed_hashes", "type": "Dict[str, str]", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "testgen_agent",
+      "label": "TestGeneratorAgent",
+      "kind": "class",
+      "sublabel": "Adversarial QA engineer",
+      "row": 3,
+      "col": 0,
+      "methods": [
+        { "name": "generate_tests", "parameters": "state", "returns": "TestGenResult", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "debugger_agent",
+      "label": "DebuggerAgent",
+      "kind": "class",
+      "sublabel": "AST SRE troubleshooter",
+      "row": 3,
+      "col": 1,
+      "methods": [
+        { "name": "diagnose_failure", "parameters": "results: TestResults", "returns": "DebugResult", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "independent_verifier",
+      "label": "IndependentVerifier",
+      "kind": "class",
+      "sublabel": "Sovereign audit authority",
+      "row": 3,
+      "col": 2,
+      "attributes": [
+        { "name": "repo_path", "type": "str", "visibility": "public" },
+        { "name": "verified_manifest", "type": "Dict[str, str]", "visibility": "public" }
+      ],
+      "methods": [
+        { "name": "verify", "parameters": "state: AgentState", "returns": "WorkflowOutcome", "visibility": "public" },
+        { "name": "verify_manifest_intact", "parameters": "manifest: Dict", "returns": "Tuple[bool, List]", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "testgen_result",
+      "label": "TestGenResult",
+      "kind": "record",
+      "sublabel": "Pydantic contract",
+      "row": 4,
+      "col": 0,
+      "attributes": [
+        { "name": "test_files", "type": "List[str]", "visibility": "public" },
+        { "name": "edge_cases_tested", "type": "List[str]", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "debug_result",
+      "label": "DebugResult",
+      "kind": "record",
+      "sublabel": "Pydantic contract",
+      "row": 4,
+      "col": 1,
+      "attributes": [
+        { "name": "root_cause", "type": "str", "visibility": "public" },
+        { "name": "remediation_plan", "type": "str", "visibility": "public" }
+      ]
+    }
+  ],
+  "relationships": [
+    { "id": "r1", "from": "manager_agent", "to": "base_agent", "kind": "inheritance" },
+    { "id": "r2", "from": "coder_agent", "to": "base_agent", "kind": "inheritance" },
+    { "id": "r3", "from": "reviewer_agent", "to": "base_agent", "kind": "inheritance" },
+    { "id": "r4", "from": "testgen_agent", "to": "base_agent", "kind": "inheritance" },
+    { "id": "r5", "from": "debugger_agent", "to": "base_agent", "kind": "inheritance" },
+    { "id": "r6", "from": "manager_agent", "to": "manager_plan", "kind": "dependency", "label": "emits" },
+    { "id": "r7", "from": "coder_agent", "to": "coder_result", "kind": "dependency", "label": "emits" },
+    { "id": "r8", "from": "reviewer_agent", "to": "review_result", "kind": "dependency", "label": "emits" },
+    { "id": "r9", "from": "independent_verifier", "to": "review_result", "kind": "dependency", "label": "validates" },
+    { "id": "r10", "from": "testgen_agent", "to": "testgen_result", "kind": "dependency", "label": "emits" },
+    { "id": "r11", "from": "debugger_agent", "to": "debug_result", "kind": "dependency", "label": "emits" }
+  ]
+}

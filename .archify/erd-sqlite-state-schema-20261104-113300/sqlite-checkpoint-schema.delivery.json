@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c698d851-fad8-454a-bb3c-3bc716b69f8a",
+  "status": "current",
+  "command": "deliver",
+  "type": "erd",
+  "input": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/erd-sqlite-state-schema-20261104-113300/candidate.json",
+  "output": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/erd-sqlite-state-schema-20261104-113300/sqlite-checkpoint-schema.html",
+  "specification": {
+    "sha256": "5aa579dcb2501b94403ea697b658df543926930c22c4dc73f4cc972595502336",
+    "bytes": 5292
+  },
+  "artifact": {
+    "sha256": "4bd512eb690ff45604cb1f36c25c7724509615997142eaeabfb24c1bea3d0d21",
+    "bytes": 854000
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "39d11245-3aee-46cd-97fd-cb8c50177420",
+  "status": "current",
+  "command": "deliver",
+  "type": "dataflow",
+  "input": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/dataflow-ast-indexing-20261104-111900/candidate.json",
+  "output": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/dataflow-ast-indexing-20261104-111900/ast-indexing-dataflow.html",
+  "specification": {
+    "sha256": "361d21cb3a19d6a0997fcd759a76e8c011626d8aa61b1fc984316fc09b284e50",
+    "bytes": 4831
+  },
+  "artifact": {
+    "sha256": "f5da572bcf9ed5af522c6ee8310ee16e00269d6b1cfdbc2cc18e1f2baab11142",
+    "bytes": 845621
+  }
+}

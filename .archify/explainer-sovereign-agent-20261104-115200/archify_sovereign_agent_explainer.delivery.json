@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "20a664ff-08e7-4166-b325-6efd445be570",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/candidate.archify.md",
+  "output": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.html",
+  "specification": {
+    "sha256": "152699bfa9e1ed16e43928ce46aa33bd455bb659872b6e35688561b2411fb127",
+    "bytes": 4801
+  },
+  "artifact": {
+    "sha256": "783660f477c210fcd4b1e09516b2cafb16ca92d8620bb6c37c50a617d5ba394a",
+    "bytes": 566669
+  },
+  "explainer": {
+    "preparedSha256": "61d61d83c14ea60932380b9182f5206359450733ac3e1cf4c01eda030a314718",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "gate-workflow",
+        "inline": true,
+        "sha256": "78ce8b8d14b1d647a0dba2fe0309bff8089837b0aa13ed5249e3903480aa5dab",
+        "bytes": 1196
+      }
+    ]
+  }
+}

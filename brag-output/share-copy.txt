@@ -1,0 +1,5 @@
+What if you could delegate an entire coding task to an autonomous AI engineering team?
+
+Meet the Multi-Agent AI Engineering System: connect your repository, describe your task, and let five specialized agents plan, code, generate tests, and self-heal in an isolated sandbox.
+
+Don't just generate code. Engineer, test, debug, and verify.

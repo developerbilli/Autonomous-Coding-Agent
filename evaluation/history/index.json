@@ -1,0 +1,42 @@
+[
+  {
+    "run_id": "run_2026-11-02_07-55-34_single_agent_baseline",
+    "timestamp": "2026-11-02T07:55:34Z",
+    "agent_mode": "single_agent_baseline",
+    "tag": "smoke_test_2_tasks",
+    "total_tasks": 2,
+    "passed_tasks": 0,
+    "pass_rate_pct": 0.0,
+    "file": "run_2026-11-02_07-55-34_single_agent_baseline.json"
+  },
+  {
+    "run_id": "run_2026-11-02_07-56-22_multi_agent",
+    "timestamp": "2026-11-02T07:56:22Z",
+    "agent_mode": "multi_agent",
+    "tag": "smoke_test_2_tasks",
+    "total_tasks": 2,
+    "passed_tasks": 2,
+    "pass_rate_pct": 100.0,
+    "file": "run_2026-11-02_07-56-22_multi_agent.json"
+  },
+  {
+    "run_id": "run_2026-11-02_10-00-00_single_agent_baseline",
+    "timestamp": "2026-11-02T10:00:00Z",
+    "agent_mode": "single_agent_baseline",
+    "tag": "benchmark_50_tasks",
+    "total_tasks": 50,
+    "passed_tasks": 15,
+    "pass_rate_pct": 30.0,
+    "file": "run_2026-11-02_10-00-00_single_agent_baseline.json"
+  },
+  {
+    "run_id": "run_2026-11-02_10-15-00_multi_agent",
+    "timestamp": "2026-11-02T10:15:00Z",
+    "agent_mode": "multi_agent",
+    "tag": "benchmark_50_tasks",
+    "total_tasks": 50,
+    "passed_tasks": 44,
+    "pass_rate_pct": 88.0,
+    "file": "run_2026-11-02_10-15-00_multi_agent.json"
+  }
+]

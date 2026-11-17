@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/sequence-failure-loop-20261104-105700/candidate.json",
+    "sha256": "5c6d0360a0cf53efaccb509d0d6d860b80ca4b3f804ae429ed66002bd60c731e",
+    "bytes": 3613
+  },
+  "artifact": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/sequence-failure-loop-20261104-105700/failure-loop.html",
+    "sha256": "c022cea6fcd21eb70a417abe4f94cf60d072fd4448af1907db0303ed4027e1b7",
+    "bytes": 834670
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/sequence-failure-loop-20261104-105700/failure-loop.finalize.json",
+    "summaryReceipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/sequence-failure-loop-20261104-105700/failure-loop.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/sequence-failure-loop-20261104-105700/failure-loop.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-04T05:17:56.041Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6031,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

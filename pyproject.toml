@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autonomous-coding-agent"
+version = "1.0.0"
+description = "Autonomous Multi-Agent AI Software Engineering System with LangGraph State Orchestration and Sovereign 4-Pillar Verification."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "DeepMind & Autonomous Agent Systems Engineering" }
+]
+dependencies = [
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "langsmith>=0.1.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "requests>=2.28.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent*", "evaluation*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+norecursedirs = ["mock_repo", "calculator_repo", ".git", ".pytest_cache", "brag-output"]
+python_files = ["test_*.py"]
+addopts = "-o pythonpath=."

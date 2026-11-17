@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "diagram_type": "timeline",
+  "meta": {
+    "title": "Autonomous AI Coding Agent: Architectural Evolution & Benchmark Milestones",
+    "subtitle": "Progression across 5 development epochs from unmetered zero-shot LLM baseline to sovereign 4-pillar verification gate on the 50-task SWE benchmark.",
+    "output": "archify_benchmark_timeline.html",
+    "evidence": "observed",
+    "timezone": "Asia/Kolkata",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "v_all",
+        "label": "Full Evolution",
+        "focus": ["deploy_epoch1", "deploy_epoch5", "bench_final"],
+        "note": "Complete 5-epoch progression from 24% baseline to 86% verified SWE pass rate."
+      },
+      {
+        "id": "v_milestones",
+        "label": "Architecture Epochs",
+        "focus": ["deploy_epoch1", "deploy_epoch2", "deploy_epoch3", "deploy_epoch4", "deploy_epoch5"],
+        "note": "Evolution from monolithic prompt to 5 specialized LangGraph agents."
+      },
+      {
+        "id": "v_verif",
+        "label": "Verification Gates",
+        "focus": ["reviewer_gate", "ast_auditor", "sovereign_gate"],
+        "note": "Introduction of adversarial code review, AST assertion audit, and TOCTOU manifest checks."
+      },
+      {
+        "id": "v_bench",
+        "label": "Benchmark Runs",
+        "focus": ["bench_baseline", "bench_single_loop", "bench_multi_agent", "bench_final"],
+        "note": "SWE-50 benchmark pass rate, regression interception, and McNemar statistical significance."
+      }
+    ]
+  },
+  "layout": {
+    "width": 1050,
+    "breaks": "auto"
+  },
+  "lanes": [
+    {
+      "id": "milestones",
+      "label": "Architectural Epochs"
+    },
+    {
+      "id": "verification_gates",
+      "label": "Verification & Safety Gates"
+    },
+    {
+      "id": "benchmark_results",
+      "label": "SWE-50 Benchmark & Telemetry"
+    }
+  ],
+  "events": [
+    {
+      "id": "deploy_epoch1",
+      "at": "2026-10-15T09:00:00+05:30",
+      "title": "Epoch 1: Zero-Shot Baseline",
+      "detail": "Monolithic prompt generating code and tests in a single unmetered call without runtime execution.",
+      "lane": "milestones",
+      "kind": "change"
+    },
+    {
+      "id": "bench_baseline",
+      "at": "2026-10-15T14:30:00+05:30",
+      "title": "Baseline Benchmark: 24% Pass",
+      "detail": "12/50 tasks passed. 28 baseline test regressions observed; 14 silent test assertion modifications.",
+      "lane": "benchmark_results",
+      "kind": "alert"
+    },
+    {
+      "id": "deploy_epoch2",
+      "at": "2026-10-20T10:00:00+05:30",
+      "title": "Epoch 2: LangGraph Core Loop",
+      "detail": "StateGraph with isolated unified execution sandbox, AtomicPatcher AST pre-validation, and retry metering.",
+      "lane": "milestones",
+      "kind": "change"
+    },
+    {
+      "id": "bench_single_loop",
+      "at": "2026-10-21T16:00:00+05:30",
+      "title": "Single-Agent Loop: 48% Pass",
+      "detail": "24/50 tasks passed. Intercepted syntax crashes via AtomicPatcher, but silent regressions remained.",
+      "lane": "benchmark_results",
+      "kind": "default"
+    },
+    {
+      "id": "deploy_epoch3",
+      "at": "2026-10-26T11:00:00+05:30",
+      "title": "Epoch 3: 5 Specialized Agents",
+      "detail": "Decomposed into Manager, Coder, TestGen, Reviewer, and Debugger governed by strict Pydantic contracts.",
+      "lane": "milestones",
+      "kind": "change"
+    },
+    {
+      "id": "reviewer_gate",
+      "at": "2026-10-27T17:00:00+05:30",
+      "title": "Adversarial Reviewer Active",
+      "detail": "Automated code quality scoring (>= 8.0/10) and SHA-256 pre-flight production hash validation.",
+      "lane": "verification_gates",
+      "kind": "action"
+    },
+    {
+      "id": "bench_multi_agent",
+      "at": "2026-10-28T18:30:00+05:30",
+      "title": "Multi-Agent: 68% Pass Rate",
+      "detail": "34/50 tasks passed. Baseline regressions dropped from 28 to 6; scope creep eliminated.",
+      "lane": "benchmark_results",
+      "kind": "recovery"
+    },
+    {
+      "id": "ast_auditor",
+      "at": "2026-11-01T10:00:00+05:30",
+      "title": "AST Assertion Auditor Deployed",
+      "detail": "AST comparator actively detects deleted or weakened test assertions (e.g. assert True replacement).",
+      "lane": "verification_gates",
+      "kind": "alert"
+    },
+    {
+      "id": "deploy_epoch4",
+      "at": "2026-11-02T15:00:00+05:30",
+      "title": "Epoch 4: AST Self-Healing Debugger",
+      "detail": "Debugger generates AST-targeted traceback diagnostics, routing directly into Coder remediation.",
+      "lane": "milestones",
+      "kind": "change"
+    },
+    {
+      "id": "sovereign_gate",
+      "at": "2026-11-03T11:30:00+05:30",
+      "title": "Sovereign 4-Pillar Gate & WAL",
+      "detail": "Decoupled verifier enforces out-of-band baseline ledger, TOCTOU manifest check, and sealed tar.gz.",
+      "lane": "verification_gates",
+      "kind": "action"
+    },
+    {
+      "id": "bench_final",
+      "at": "2026-11-04T10:00:00+05:30",
+      "title": "SWE-50 Final: 86% Verified Pass",
+      "detail": "43/50 tasks verified. 0 regressions (100% intercepted). McNemar paired test p < 0.0001.",
+      "lane": "benchmark_results",
+      "kind": "recovery"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Epoch 1: Zero-Shot Baseline (24%)",
+      "items": [
+        "Monolithic LLM prompt with no execution feedback",
+        "28 baseline test regressions across 50 tasks",
+        "Silent modifications to test assertions undetected"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Epoch 2: Single-Agent Loop (48%)",
+      "items": [
+        "LangGraph StateGraph with isolated pytest sandbox",
+        "AtomicPatcher AST pre-validation prevents syntax corruption",
+        "Centralized retry metering prevents infinite runaway loops"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Epoch 3: 5 Specialized Agents (68%)",
+      "items": [
+        "Separation of concerns: Manager, Coder, TestGen, Reviewer, Debugger",
+        "Adversarial test generation without Coder's shortcuts",
+        "Regressions drop from 28 down to 6 tasks"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Epoch 4: AST Self-Healing Debugger (82%)",
+      "items": [
+        "AST traceback analysis isolates exact failure frames",
+        "Targeted remediation plans eliminate guess-and-check cycles",
+        "Average iterations to green reduced from 3.8 to 1.6"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Epoch 5: Sovereign 4-Pillar Verification (86%)",
+      "items": [
+        "Decoupled verifier with out-of-band SHA-256 baseline ledger",
+        "Zero regressions accepted across all 50 tasks (100% interception)",
+        "Statistically proven superior to baseline (McNemar p < 0.0001)"
+      ]
+    }
+  ]
+}

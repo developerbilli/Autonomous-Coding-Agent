@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/candidate.archify.md",
+    "sha256": "152699bfa9e1ed16e43928ce46aa33bd455bb659872b6e35688561b2411fb127",
+    "bytes": 4801
+  },
+  "artifact": {
+    "path": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.html",
+    "sha256": "783660f477c210fcd4b1e09516b2cafb16ca92d8620bb6c37c50a617d5ba394a",
+    "bytes": 566669
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.finalize.json",
+    "summaryReceipt": "/Users/anusurya/Desktop/projects/ai coding agent /.archify/explainer-sovereign-agent-20261104-115200/archify_sovereign_agent_explainer.finalize-summary.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-04T05:17:56.041Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 534,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

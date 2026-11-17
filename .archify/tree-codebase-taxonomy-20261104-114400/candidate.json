@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "Autonomous AI Coding Agent: Subsystem & Capability Taxonomy",
+    "subtitle": "Single-parent containment hierarchy decomposing the multi-agent codebase into core orchestration, specialist agents, sovereign verification, sandbox tooling, and benchmark evaluation.",
+    "output": "archify_codebase_tree_taxonomy.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "v_all",
+        "label": "Full Taxonomy",
+        "focus": ["agent_root"],
+        "note": "Complete codebase decomposition across 5 architectural pillars."
+      },
+      {
+        "id": "v_core",
+        "label": "Agent Core",
+        "focus": ["agent_core", "graph", "state", "checkpointer", "contracts"],
+        "note": "LangGraph StateGraph, SQLite WAL checkpointer, and typed state contracts."
+      },
+      {
+        "id": "v_agents",
+        "label": "Specialist Agents",
+        "focus": ["specialist_agents", "manager_agent", "coder_agent", "test_gen_agent", "reviewer_agent", "debugger_agent"],
+        "note": "5 specialized agent roles inheriting from BaseAgent."
+      },
+      {
+        "id": "v_verif",
+        "label": "Sovereign Verifier",
+        "focus": ["sovereign_verifier", "verifier", "ledger", "handover"],
+        "note": "Decoupled 4-pillar verification gate, baseline ledger, and immutable handover."
+      },
+      {
+        "id": "v_eval",
+        "label": "Evaluation Suite",
+        "focus": ["eval_harness", "harness", "runner", "stats", "metrics"],
+        "note": "50-task benchmark framework, parallel execution, and McNemar statistical tests."
+      }
+    ]
+  },
+  "layout": {
+    "direction": "down",
+    "gapX": 28,
+    "gapY": 48,
+    "nodeW": 180,
+    "nodeMaxW": 240
+  },
+  "nodes": [
+    {
+      "id": "agent_root",
+      "label": "Autonomous AI Coding Agent",
+      "sublabel": "Stateful Multi-Agent Engineering Engine"
+    },
+    {
+      "id": "agent_core",
+      "label": "agent/core/",
+      "parent": "agent_root",
+      "sublabel": "Orchestration & State Management"
+    },
+    {
+      "id": "graph",
+      "label": "graph.py",
+      "parent": "agent_core",
+      "sublabel": "StateGraph & router transitions"
+    },
+    {
+      "id": "state",
+      "label": "state.py",
+      "parent": "agent_core",
+      "sublabel": "AgentState schema & reducers"
+    },
+    {
+      "id": "checkpointer",
+      "label": "checkpointer.py",
+      "parent": "agent_core",
+      "sublabel": "SqliteCheckpointSaver WAL"
+    },
+    {
+      "id": "contracts",
+      "label": "contracts.py",
+      "parent": "agent_core",
+      "sublabel": "Pydantic structured schemas"
+    },
+    {
+      "id": "specialist_agents",
+      "label": "agent/agents/",
+      "parent": "agent_root",
+      "sublabel": "Domain-Specialized Problem Solvers"
+    },
+    {
+      "id": "base_agent",
+      "label": "base.py",
+      "parent": "specialist_agents",
+      "sublabel": "BaseAgent abstract parent"
+    },
+    {
+      "id": "manager_agent",
+      "label": "manager.py",
+      "parent": "specialist_agents",
+      "sublabel": "Planner, delegator & finalizer"
+    },
+    {
+      "id": "coder_agent",
+      "label": "coder.py",
+      "parent": "specialist_agents",
+      "sublabel": "AST-guided code synthesizer"
+    },
+    {
+      "id": "test_gen_agent",
+      "label": "test_generator.py",
+      "parent": "specialist_agents",
+      "sublabel": "Adversarial test writer"
+    },
+    {
+      "id": "reviewer_agent",
+      "label": "reviewer.py",
+      "parent": "specialist_agents",
+      "sublabel": "Security & QA auditor"
+    },
+    {
+      "id": "debugger_agent",
+      "label": "debugger.py",
+      "parent": "specialist_agents",
+      "sublabel": "Root-cause diagnostic engine"
+    },
+    {
+      "id": "sovereign_verifier",
+      "label": "agent/verification/",
+      "parent": "agent_root",
+      "sublabel": "Decoupled Verification Gate"
+    },
+    {
+      "id": "verifier",
+      "label": "verifier.py",
+      "parent": "sovereign_verifier",
+      "sublabel": "4-pillar test/AST/hash audit"
+    },
+    {
+      "id": "ledger",
+      "label": "ledger.py",
+      "parent": "sovereign_verifier",
+      "sublabel": "Anti-tamper baseline ledger"
+    },
+    {
+      "id": "handover",
+      "label": "handover.py",
+      "parent": "sovereign_verifier",
+      "sublabel": "Read-only tar.gz packager"
+    },
+    {
+      "id": "tools_runtime",
+      "label": "agent/tools/",
+      "parent": "agent_root",
+      "sublabel": "Execution Sandbox & AST Indexer"
+    },
+    {
+      "id": "sandbox",
+      "label": "sandbox.py",
+      "parent": "tools_runtime",
+      "sublabel": "Isolated subprocess pytest/mypy"
+    },
+    {
+      "id": "indexer",
+      "label": "codebase_index.py",
+      "parent": "tools_runtime",
+      "sublabel": "AST parser & BM25 retrieval"
+    },
+    {
+      "id": "patcher",
+      "label": "patcher.py",
+      "parent": "tools_runtime",
+      "sublabel": "Atomic AST-validated patcher"
+    },
+    {
+      "id": "eval_harness",
+      "label": "evaluation/",
+      "parent": "agent_root",
+      "sublabel": "Benchmark & Telemetry Suite"
+    },
+    {
+      "id": "harness",
+      "label": "harness.py",
+      "parent": "eval_harness",
+      "sublabel": "50-task benchmark framework"
+    },
+    {
+      "id": "runner",
+      "label": "runner.py",
+      "parent": "eval_harness",
+      "sublabel": "Parallel execution harness"
+    },
+    {
+      "id": "stats",
+      "label": "statistical_significance.py",
+      "parent": "eval_harness",
+      "sublabel": "McNemar's test & p-values"
+    },
+    {
+      "id": "metrics",
+      "label": "metrics.py",
+      "parent": "eval_harness",
+      "sublabel": "Pass rate & latency tracking"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Orchestration & State",
+      "items": [
+        "LangGraph StateGraph with conditional branch routing",
+        "SQLite WAL Checkpointer for durable crash resumption",
+        "Strict Pydantic contract validation at node boundaries"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Specialist Agents",
+      "items": [
+        "5 domain specialists inheriting from common BaseAgent",
+        "Centralized retry budget metering (max 5 iterations)",
+        "Isolated prompts preventing role drift and context contamination"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Sovereign Verification",
+      "items": [
+        "Decoupled independent verifier outside LLM control",
+        "Out-of-band SHA-256 baseline ledger preventing replay attacks",
+        "Immutable read-only tar.gz handover artifact package"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Execution & Tooling",
+      "items": [
+        "Subprocess pytest execution with 60s timeout enforcement",
+        "AST parser extracting classes, functions, and imports",
+        "Atomic syntax pre-validation before disk commit"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Evaluation & Rigor",
+      "items": [
+        "50 real-world bug-fixing tasks with baseline tests",
+        "McNemar exact paired test proving p < 0.0001 significance",
+        "Zero regression interception across entire benchmark"
+      ]
+    }
+  ]
+}

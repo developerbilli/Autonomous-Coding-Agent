@@ -1,0 +1,92 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Sovereign 4-Pillar Verification Workflow",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "output": ".archify/workflow-sovereign-verification-20261104-111100/verification-workflow.html"
+  },
+  "lanes": [
+    { "id": "orch", "label": "Manager Orchestration" },
+    { "id": "verifier", "label": "Sovereign Verifier Core", "variant": "exception" },
+    { "id": "audit", "label": "AST & Snapshot Vault" },
+    { "id": "sandbox", "label": "Isolated Subprocess" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "Handoff", "fromCol": 0, "toCol": 0 },
+    { "id": "p1_p2", "label": "Pillars 1 & 2: Tests & AST", "fromCol": 1, "toCol": 2, "variant": "emphasis" },
+    { "id": "p3_p4", "label": "Pillars 3 & 4: Hashes & TOCTOU", "fromCol": 3, "toCol": 4, "variant": "security" },
+    { "id": "verdict", "label": "Admission Verdict", "fromCol": 5, "toCol": 5 }
+  ],
+  "mainPath": [
+    "manager_finalize",
+    "sovereign_core",
+    "gate_pytest",
+    "gate_ast",
+    "gate_hash",
+    "gate_toctou",
+    "patch_admitted"
+  ],
+  "nodes": [
+    { "id": "manager_finalize", "lane": "orch", "col": 0, "type": "backend", "label": "Manager Finalize", "sublabel": "hands off candidate", "width": 132 },
+    { "id": "patch_admitted", "lane": "orch", "col": 5, "type": "backend", "label": "Patch Admitted", "sublabel": "sealed tarball created", "tag": "success", "width": 132 },
+    { "id": "sovereign_core", "lane": "verifier", "col": 0, "type": "security", "label": "IndependentVerifier", "sublabel": "decoupled authority", "tag": "read-only", "width": 132 },
+    { "id": "gate_pytest", "lane": "verifier", "col": 1, "type": "security", "label": "Pillar 1: Pytest", "sublabel": "0 baseline regressions", "width": 132 },
+    { "id": "gate_ast", "lane": "verifier", "col": 2, "type": "security", "label": "Pillar 2: AST Guard", "sublabel": "0 deleted assertions", "width": 132 },
+    { "id": "gate_hash", "lane": "verifier", "col": 3, "type": "security", "label": "Pillar 3: SHA-256", "sublabel": "snapshot matches", "width": 132 },
+    { "id": "gate_toctou", "lane": "verifier", "col": 4, "type": "security", "label": "Pillar 4: TOCTOU", "sublabel": "anti-drift check", "width": 132 },
+    { "id": "patch_rejected", "lane": "verifier", "col": 5, "type": "security", "label": "Patch Rejected", "sublabel": "halted; route to debug", "tag": "fail-closed", "width": 132 },
+    { "id": "ast_differ", "lane": "audit", "col": 2, "type": "database", "label": "AST Syntax Differ", "sublabel": "parses assert nodes", "width": 132 },
+    { "id": "hash_vault", "lane": "audit", "col": 3, "type": "database", "label": "Baseline Snapshot", "sublabel": "pre-run SHA-256 hashes", "width": 132 },
+    { "id": "manifest_vault", "lane": "audit", "col": 4, "type": "database", "label": "Disk Manifest", "sublabel": "mtime + sha256 scan", "width": 132 },
+    { "id": "docker_pytest", "lane": "sandbox", "col": 1, "type": "cloud", "label": "Decoupled Pytest", "sublabel": "clean test process", "width": 132 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "manager_finalize", "to": "sovereign_core", "label": "audit request", "variant": "emphasis" },
+    { "id": "e2", "from": "sovereign_core", "to": "gate_pytest", "label": "gate 1", "variant": "default" },
+    { "id": "e3", "from": "gate_pytest", "to": "docker_pytest", "label": "run baseline", "variant": "default" },
+    { "id": "e4", "from": "docker_pytest", "to": "gate_pytest", "label": "all pass", "variant": "default", "role": "return" },
+    { "id": "e5", "from": "gate_pytest", "to": "gate_ast", "label": "gate 2", "variant": "emphasis" },
+    { "id": "e6", "from": "gate_ast", "to": "ast_differ", "label": "inspect AST", "variant": "default" },
+    { "id": "e7", "from": "ast_differ", "to": "gate_ast", "label": "intact", "variant": "default", "role": "return" },
+    { "id": "e8", "from": "gate_ast", "to": "gate_hash", "label": "gate 3", "variant": "emphasis" },
+    { "id": "e9", "from": "gate_hash", "to": "hash_vault", "label": "compare", "variant": "default" },
+    { "id": "e10", "from": "hash_vault", "to": "gate_hash", "label": "valid", "variant": "default", "role": "return" },
+    { "id": "e11", "from": "gate_hash", "to": "gate_toctou", "label": "gate 4", "variant": "emphasis" },
+    { "id": "e12", "from": "gate_toctou", "to": "manifest_vault", "label": "re-scan disk", "variant": "default" },
+    { "id": "e13", "from": "manifest_vault", "to": "gate_toctou", "label": "0 drift", "variant": "default", "role": "return" },
+    { "id": "e14", "from": "gate_toctou", "to": "patch_admitted", "label": "4/4 verified", "variant": "emphasis" },
+    { "id": "e15", "from": "gate_toctou", "to": "patch_rejected", "label": "any gate fails", "variant": "security", "role": "error" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "1. Decoupled Independence",
+      "items": [
+        "Verifier runs strictly read-only and independently from the agent loop",
+        "Executes hidden baseline tests in an isolated, unpolluted subprocess",
+        "Ensures LLM self-evaluation bias cannot admit regressive patches"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "2. AST Integrity & Tamper Proofing",
+      "items": [
+        "Pillar 2 parses test module AST trees to catch deleted assert statements",
+        "Pillar 3 verifies SHA-256 hashes of all non-target repository files",
+        "Pillar 4 re-verifies disk manifest right before report generation (anti-TOCTOU)"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "3. Strict Fail-Closed Guarantee",
+      "items": [
+        "Any missing evidence, regressed baseline test, or altered snapshot rejects patch",
+        "Admission halts immediately; diagnostics route to Debugger for repair",
+        "Admitted patches are sealed into an immutable .tar.gz delivery artifact"
+      ]
+    }
+  ]
+}
