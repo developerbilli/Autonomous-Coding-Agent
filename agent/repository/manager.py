@@ -122,13 +122,24 @@ class RepositoryManager:
 
         return ws_path
 
-    def restore_workspace_secrets(self, task_id: str, ws_path: Path) -> int:
+    def restore_workspace_secrets(
+        self,
+        task_id: str,
+        ws_path: Path,
+        barrier: Optional[Any] = None,
+        wipe_quarantine: bool = True,
+    ) -> int:
         """Restores quarantined secret files when explicitly authorized upon task completion."""
         records = self.quarantine_registry.get(task_id, [])
         if not records:
             return 0
         from agent.repository.sanitizer import WorkspaceSanitizer
-        return WorkspaceSanitizer.restore_secrets(ws_path, records)
+        return WorkspaceSanitizer.restore_secrets(
+            ws_path,
+            records,
+            barrier=barrier,
+            wipe_quarantine=wipe_quarantine,
+        )
 
     def _clone_github(self, task_dir: Path, spec: WorkspaceSpec) -> Path:
         """Clones a GitHub repository into an isolated workspace directory."""

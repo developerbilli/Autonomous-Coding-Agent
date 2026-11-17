@@ -31,6 +31,7 @@ from agent.execution.isolation import (
     TIER_SPECIFICATIONS,
 )
 from agent.execution.container_sandbox import ContainerSandbox
+from agent.execution.barrier import ProcessDestructionBarrier, ProcessBarrierViolationError
 from agent.execution.microvm_sandbox import (
     FirecrackerMicroVMSandbox,
     GVisorAppKernelSandbox,
@@ -137,11 +138,14 @@ class ExecutionSandbox:
             except Exception as e:
                 logger.warning(f"Could not scan/quarantine workspace secrets: {e}")
 
+        # Initialize process destruction barrier to track and enforce process lifecycle
+        self.barrier = ProcessDestructionBarrier()
+
         # Initialize dedicated isolation engines for each tier
         self.microvm_engine = FirecrackerMicroVMSandbox(str(self.repo_path), policy=self.policy)
         self.gvisor_engine = GVisorAppKernelSandbox(str(self.repo_path), policy=self.policy)
-        self.container_engine = ContainerSandbox(str(self.repo_path), policy=self.policy)
-        self.hardened_engine = HardenedProcessSandbox(str(self.repo_path), policy=self.policy)
+        self.container_engine = ContainerSandbox(str(self.repo_path), policy=self.policy, barrier=self.barrier)
+        self.hardened_engine = HardenedProcessSandbox(str(self.repo_path), policy=self.policy, barrier=self.barrier)
 
         # Select highest available isolation tier or enforce fail-closed block
         self.fallback_blocked = False
@@ -216,6 +220,21 @@ class ExecutionSandbox:
             "firecracker_available": self.microvm_engine.is_available(),
             "gvisor_available": self.gvisor_engine.is_available(),
         }
+
+    def terminate_all_processes(self, grace_seconds: float = 0.5) -> bool:
+        """Enforces termination of all active execution processes and containers."""
+        return self.barrier.terminate_all(grace_seconds=grace_seconds)
+
+    def restore_quarantined_secrets(self) -> int:
+        """Restores quarantined secrets after enforcing process destruction barrier."""
+        if not self.quarantined_secrets:
+            return 0
+        from agent.repository.sanitizer import WorkspaceSanitizer
+        return WorkspaceSanitizer.restore_secrets(
+            self.repo_path,
+            self.quarantined_secrets,
+            barrier=self.barrier,
+        )
 
     def run_command(self, cmd: List[str]) -> ExecutionOutput:
         """Executes a command through the active isolation boundary or raises SecurityIsolationUnavailableError."""

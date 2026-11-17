@@ -48,10 +48,12 @@ class ContainerSandbox:
         repo_path: str,
         policy: Optional[SandboxSecurityPolicy] = None,
         image_name: str = "autonomous-agent-sandbox:latest",
+        barrier: Optional[Any] = None,
     ):
         self.repo_path = Path(repo_path).resolve()
         self.policy = policy or SandboxSecurityPolicy(isolation_level=IsolationLevel.CONTAINER)
         self.image_name = image_name
+        self.barrier = barrier
         self.runtime_binary = self._detect_runtime()
 
     def _detect_runtime(self) -> Optional[str]:
@@ -147,6 +149,9 @@ class ContainerSandbox:
         container_name = f"sandbox-{uuid.uuid4().hex[:12]}"
         container_args = self.build_container_args(container_name, cmd)
 
+        if self.barrier:
+            self.barrier.register_container(container_name, self.runtime_binary or "docker")
+
         t0 = time.time()
         process = None
         timed_out = False
@@ -159,6 +164,8 @@ class ContainerSandbox:
                 stderr=subprocess.PIPE,
                 text=True,
             )
+            if self.barrier:
+                self.barrier.register_pid(process.pid)
 
             try:
                 stdout_raw, stderr_raw = process.communicate(timeout=self.policy.timeout_seconds)

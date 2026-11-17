@@ -98,11 +98,15 @@ def test_quarantine_and_neutralization(temp_workspace):
     # Check that safe templates are completely untouched
     assert (temp_workspace / ".env.example").read_text() == "GEMINI_API_KEY=your_key_here\nDB_PASS=your_password\n"
 
-    # Check that quarantined storage holds the original content
+    # Check that quarantined storage holds ENCRYPTED content (NO plaintext secrets on disk)
     env_record = next(r for r in records if r.rel_path == ".env")
     quarantine_path = Path(env_record.quarantine_path)
     assert quarantine_path.exists()
-    assert quarantine_path.read_text() == orig_env
+    assert env_record.is_encrypted is True
+    quarantined_bytes = quarantine_path.read_bytes()
+    # Sensitive key MUST NOT appear in plaintext on disk
+    assert "AIzaSyFakeSecretKey12345".encode("utf-8") not in quarantined_bytes
+    assert quarantined_bytes.startswith(b"AQENC1")
 
 
 def test_restoration_of_quarantined_secrets(temp_workspace):
@@ -148,4 +152,64 @@ def test_repository_manager_automatic_quarantine(temp_workspace):
         assert "AIzaSyFakeSecretKey12345" in (ws_path / ".env").read_text()
     finally:
         shutil.rmtree(base_ws, ignore_errors=True)
+
+
+def test_process_destruction_barrier_blocks_restoration_when_active(temp_workspace):
+    """Verify Anti-TOCTOU barrier: secret restoration is strictly refused if untrusted processes are alive."""
+    from agent.execution.barrier import ProcessDestructionBarrier, ProcessBarrierViolationError
+
+    records = WorkspaceSanitizer.quarantine_secrets(temp_workspace)
+    assert len(records) > 0
+
+    class RogueActiveBarrier:
+        """Simulates an active untrusted background process that refuses to terminate."""
+        def terminate_all(self, grace_seconds: float = 0.5):
+            pass
+        def is_any_alive(self):
+            return True
+
+    rogue_barrier = RogueActiveBarrier()
+
+    with pytest.raises(ProcessBarrierViolationError) as exc_info:
+        WorkspaceSanitizer.restore_secrets(temp_workspace, records, barrier=rogue_barrier)
+
+    assert "Process destruction barrier violation" in str(exc_info.value)
+    # Ensure secrets were NOT restored on failure
+    assert (temp_workspace / ".env").read_text() == SANITIZED_PLACEHOLDER_CONTENT
+
+
+def test_process_destruction_barrier_terminates_processes_and_permits_restoration(temp_workspace):
+    """Verify ProcessDestructionBarrier terminates running child processes cleanly before restoring secrets."""
+    import subprocess
+    import sys
+    from agent.execution.barrier import ProcessDestructionBarrier
+
+    orig_env = (temp_workspace / ".env").read_text()
+    records = WorkspaceSanitizer.quarantine_secrets(temp_workspace)
+
+    barrier = ProcessDestructionBarrier()
+    # Spawn a lingering process simulating a background rogue process
+    proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+    barrier.register_pid(proc.pid)
+
+    assert barrier.is_any_alive() is True
+
+    # restore_secrets should enforce termination via barrier and successfully restore
+    restored = WorkspaceSanitizer.restore_secrets(temp_workspace, records, barrier=barrier)
+    assert restored > 0
+    assert barrier.is_any_alive() is False
+    assert (temp_workspace / ".env").read_text() == orig_env
+
+
+def test_secure_quarantine_disk_zeroization(temp_workspace):
+    """Verify that when secrets are restored, quarantine files are wiped and unlinked."""
+    records = WorkspaceSanitizer.quarantine_secrets(temp_workspace)
+    env_record = next(r for r in records if r.rel_path == ".env")
+    quarantine_path = Path(env_record.quarantine_path)
+
+    assert quarantine_path.exists()
+    WorkspaceSanitizer.restore_secrets(temp_workspace, records, wipe_quarantine=True)
+    # Quarantined file should be securely deleted from disk
+    assert not quarantine_path.exists()
+
 

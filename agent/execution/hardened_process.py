@@ -52,9 +52,15 @@ class HardenedProcessSandbox:
     SIGKILL cleanup, but DOES NOT create a filesystem jail or guarantee full network isolation.
     """
 
-    def __init__(self, repo_path: str, policy: Optional[SandboxSecurityPolicy] = None):
+    def __init__(
+        self,
+        repo_path: str,
+        policy: Optional[SandboxSecurityPolicy] = None,
+        barrier: Optional[Any] = None,
+    ):
         self.repo_path = Path(repo_path).resolve()
         self.policy = policy or SandboxSecurityPolicy(isolation_level=IsolationLevel.HARDENED_PROCESS)
+        self.barrier = barrier
 
     def is_available(self) -> bool:
         """Always returns True because Python subprocess and POSIX resource module are standard."""
@@ -167,6 +173,8 @@ class HardenedProcessSandbox:
                 stderr=subprocess.PIPE,
                 text=True,
             )
+            if self.barrier:
+                self.barrier.register_pid(process.pid)
 
             try:
                 stdout_raw, stderr_raw = process.communicate(timeout=self.policy.timeout_seconds)

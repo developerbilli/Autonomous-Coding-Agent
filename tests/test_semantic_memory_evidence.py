@@ -233,7 +233,7 @@ def test_graph_lifecycle_empirical_evidence_feedback(temp_memory_engine, monkeyp
 
     # Mock IndependentVerifier methods
     class MockVerifier:
-        def __init__(self, repo_path):
+        def __init__(self, repo_path, *args, **kwargs):
             pass
         def verify(self, state):
             return mock_ver_res
@@ -308,7 +308,7 @@ def test_graph_lifecycle_failure_evidence_feedback(temp_memory_engine, monkeypat
     mock_ver_res = MockVerificationResult()
 
     class MockVerifier:
-        def __init__(self, repo_path):
+        def __init__(self, repo_path, *args, **kwargs):
             pass
         def verify(self, state):
             return mock_ver_res
