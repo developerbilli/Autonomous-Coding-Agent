@@ -22,6 +22,7 @@ import time
 import subprocess
 import logging
 from typing import List, Set, Dict, Optional, Tuple, Any
+from pathlib import Path
 
 logger = logging.getLogger("agent.execution.barrier")
 
@@ -34,9 +35,14 @@ class ProcessBarrierViolationError(RuntimeError):
 class ProcessDestructionBarrier:
     """Tracks and enforces verified destruction of all sandbox processes and containers."""
 
-    def __init__(self):
+    def __init__(self, workspace_path: Optional[Path] = None):
         self._tracked_pids: Dict[int, Optional[int]] = {}  # pid -> pgid
         self._tracked_containers: Set[Tuple[str, str]] = set()  # (container_name, runtime_bin)
+        self.workspace_path = Path(workspace_path).resolve() if workspace_path else None
+
+    def set_workspace_path(self, workspace_path: Path):
+        """Sets or updates the target workspace path for orphan process scanning."""
+        self.workspace_path = Path(workspace_path).resolve()
 
     def register_pid(self, pid: int, pgid: Optional[int] = None):
         """Registers a process ID and its process group ID for lifecycle tracking."""
@@ -93,8 +99,45 @@ class ProcessDestructionBarrier:
         except Exception:
             return False
 
+    def find_orphaned_workspace_processes(self, workspace_dir: Optional[Path] = None) -> List[int]:
+        """Detects any running host processes whose current working directory resides in the workspace.
+        
+        ANTI-SESSION ESCAPE DEFENSE:
+        If a hostile script executes double-fork + setsid() to escape its process group,
+        it still retains its current working directory (cwd) inside the task workspace.
+        This scanner identifies detached escapees and marks them for unconditional destruction.
+        """
+        target_dir = workspace_dir or self.workspace_path
+        if not target_dir:
+            return []
+        try:
+            target_str = str(Path(target_dir).resolve())
+        except Exception:
+            return []
+
+        current_pid = os.getpid()
+        orphans = []
+
+        try:
+            import psutil
+            for proc in psutil.process_iter(['pid', 'cwd']):
+                try:
+                    pinfo = proc.info
+                    p_pid = pinfo.get('pid')
+                    if not p_pid or p_pid == current_pid:
+                        continue
+                    p_cwd = pinfo.get('cwd')
+                    if p_cwd and (p_cwd == target_str or p_cwd.startswith(target_str + os.sep)):
+                        orphans.append(p_pid)
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+        except Exception as e:
+            logger.debug(f"Process scanner error during orphan detection: {e}")
+
+        return orphans
+
     def is_any_alive(self) -> bool:
-        """Returns True if any tracked process or container is currently running."""
+        """Returns True if any tracked process, container, or workspace orphan is currently running."""
         # 1. Check PIDs
         for pid in list(self._tracked_pids.keys()):
             if self.is_pid_alive(pid):
@@ -105,29 +148,30 @@ class ProcessDestructionBarrier:
             if self.is_container_alive(container_name, runtime_bin):
                 return True
 
+        # 3. Check for detached orphaned processes dwelling inside the workspace
+        orphans = self.find_orphaned_workspace_processes()
+        if orphans:
+            return True
+
         return False
 
     def get_active_summary(self) -> Dict[str, Any]:
-        """Returns a diagnostic summary of currently alive processes and containers."""
+        """Returns a diagnostic summary of currently alive processes, containers, and orphans."""
         alive_pids = [pid for pid in self._tracked_pids.keys() if self.is_pid_alive(pid)]
         alive_containers = [c[0] for c in self._tracked_containers if self.is_container_alive(c[0], c[1])]
+        orphans = self.find_orphaned_workspace_processes()
         return {
             "alive_pids_count": len(alive_pids),
             "alive_pids": alive_pids,
             "alive_containers_count": len(alive_containers),
             "alive_containers": alive_containers,
-            "is_clean": len(alive_pids) == 0 and len(alive_containers) == 0,
+            "orphaned_workspace_pids_count": len(orphans),
+            "orphaned_workspace_pids": orphans,
+            "is_clean": len(alive_pids) == 0 and len(alive_containers) == 0 and len(orphans) == 0,
         }
 
     def terminate_all(self, grace_seconds: float = 0.5) -> bool:
-        """Enforces termination of all tracked containers and process groups.
-        
-        Sequence:
-        1. Force-kill and remove all tracked containers (docker rm -f).
-        2. Send SIGTERM to process groups, wait grace period.
-        3. Send SIGKILL to process groups for any stubborn survivors.
-        4. Verify that no tracked processes remain alive.
-        """
+        """Enforces termination of all tracked containers, process groups, and workspace orphans."""
         # Step 1: Force remove all tracked containers
         for container_name, runtime_bin in list(self._tracked_containers):
             try:
@@ -166,14 +210,22 @@ class ProcessDestructionBarrier:
             except (ProcessLookupError, PermissionError):
                 pass
 
+        # Step 4: Terminate any detached orphaned processes discovered by workspace scanning
+        orphans = self.find_orphaned_workspace_processes()
+        for orphan_pid in orphans:
+            try:
+                os.kill(orphan_pid, signal.SIGKILL)
+            except Exception:
+                pass
+
         time.sleep(0.1)
 
-        # Step 4: Reap any direct children to clean up zombie states
+        # Step 5: Reap any direct children to clean up zombie states
         for pid in list(self._tracked_pids.keys()):
             try:
                 os.waitpid(pid, os.WNOHANG)
             except (ChildProcessError, ProcessLookupError):
                 pass
 
-        # Step 5: Final verification barrier
+        # Step 6: Final verification barrier
         return not self.is_any_alive()

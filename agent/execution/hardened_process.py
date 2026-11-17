@@ -162,6 +162,8 @@ class HardenedProcessSandbox:
         process = None
         timed_out = False
         truncated = False
+        oom_killed = False
+        max_rss_bytes = self.policy.memory_limit_mb * 1024 * 1024
 
         try:
             process = subprocess.Popen(
@@ -175,6 +177,37 @@ class HardenedProcessSandbox:
             )
             if self.barrier:
                 self.barrier.register_pid(process.pid)
+
+            # Active RSS memory watchdog (critical defense-in-depth on platforms where RLIMIT_AS is non-enforcing)
+            import threading
+            def memory_watchdog():
+                nonlocal oom_killed
+                while process and process.poll() is None and not oom_killed:
+                    try:
+                        import psutil
+                        p = psutil.Process(process.pid)
+                        total_rss = p.memory_info().rss
+                        for child in p.children(recursive=True):
+                            try:
+                                total_rss += child.memory_info().rss
+                            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                                pass
+                        if total_rss > max_rss_bytes:
+                            oom_killed = True
+                            logger.warning(
+                                f"Process memory limit exceeded ({total_rss // (1024*1024)}MB > {self.policy.memory_limit_mb}MB). "
+                                f"Terminating process group {process.pid}."
+                            )
+                            self._kill_process_group(process.pid)
+                            break
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        break
+                    except Exception:
+                        pass
+                    time.sleep(0.04)
+
+            watchdog_thread = threading.Thread(target=memory_watchdog, daemon=True)
+            watchdog_thread.start()
 
             try:
                 stdout_raw, stderr_raw = process.communicate(timeout=self.policy.timeout_seconds)
@@ -190,6 +223,8 @@ class HardenedProcessSandbox:
             # Enforce output buffer limit (prevent memory exhaustion from infinite logging)
             stdout_str = stdout_raw or ""
             stderr_str = stderr_raw or ""
+            if oom_killed:
+                stderr_str += f"\n[SECURITY TERMINATION: Process exceeded RSS memory limit of {self.policy.memory_limit_mb}MB (OOM Kill)]"
             if len(stdout_str.encode("utf-8")) > self.policy.max_output_bytes:
                 stdout_str = stdout_str[: self.policy.max_output_bytes] + "\n[OUTPUT TRUNCATED: Exceeded buffer limit]"
                 truncated = True
@@ -198,7 +233,12 @@ class HardenedProcessSandbox:
                 truncated = True
 
             duration = time.time() - t0
-            returncode = 124 if timed_out else (process.returncode if process else 1)
+            if oom_killed:
+                returncode = 137
+            elif timed_out:
+                returncode = 124
+            else:
+                returncode = process.returncode if process else 1
 
             return ExecutionOutput(
                 returncode=returncode,

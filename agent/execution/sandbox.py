@@ -139,7 +139,7 @@ class ExecutionSandbox:
                 logger.warning(f"Could not scan/quarantine workspace secrets: {e}")
 
         # Initialize process destruction barrier to track and enforce process lifecycle
-        self.barrier = ProcessDestructionBarrier()
+        self.barrier = ProcessDestructionBarrier(workspace_path=self.repo_path)
 
         # Initialize dedicated isolation engines for each tier
         self.microvm_engine = FirecrackerMicroVMSandbox(str(self.repo_path), policy=self.policy)

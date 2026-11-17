@@ -134,6 +134,9 @@ class RepositoryManager:
         if not records:
             return 0
         from agent.repository.sanitizer import WorkspaceSanitizer
+        if barrier is None:
+            from agent.execution.barrier import ProcessDestructionBarrier
+            barrier = ProcessDestructionBarrier(workspace_path=ws_path)
         return WorkspaceSanitizer.restore_secrets(
             ws_path,
             records,
