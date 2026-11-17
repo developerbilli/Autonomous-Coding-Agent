@@ -60,6 +60,13 @@ def test_parallel_fork_join_graph_topology():
     assert ("test_generator", "branch_join") in graph_edges
     assert ("reviewer", "branch_join") in graph_edges
 
+    # Verify that LangGraph compiled a NamedBarrierValue channel for the join barrier
+    barrier_channel_key = "join:test_generator+reviewer:branch_join"
+    assert barrier_channel_key in app.channels
+    barrier_channel = app.channels[barrier_channel_key]
+    assert type(barrier_channel).__name__ == "NamedBarrierValue"
+    assert barrier_channel.names == {"test_generator", "reviewer"}
+
     # Post-join execution to sandbox
     assert ("branch_join", "sandbox_runner") in graph_edges
     assert ("sandbox_runner", "manager_evaluate") in graph_edges
@@ -146,8 +153,7 @@ def test_concurrent_state_merging_without_invalid_update_error():
     builder.add_edge(START, "coder")
     builder.add_edge("coder", "test_generator")
     builder.add_edge("coder", "reviewer")
-    builder.add_edge("test_generator", "branch_join")
-    builder.add_edge("reviewer", "branch_join")
+    builder.add_edge(["test_generator", "reviewer"], "branch_join")
     builder.add_edge("branch_join", END)
 
     app = builder.compile()
@@ -230,8 +236,7 @@ def test_parallel_fork_join_remediation_loop_execution():
     builder.add_edge(START, "coder")
     builder.add_edge("coder", "test_generator")
     builder.add_edge("coder", "reviewer")
-    builder.add_edge("test_generator", "branch_join")
-    builder.add_edge("reviewer", "branch_join")
+    builder.add_edge(["test_generator", "reviewer"], "branch_join")
     builder.add_edge("branch_join", "sandbox_runner")
     builder.add_conditional_edges("sandbox_runner", mock_router, {
         "coder": "coder",
@@ -247,3 +252,91 @@ def test_parallel_fork_join_remediation_loop_execution():
     assert final_state["test_results"].passed is True
     assert final_state["review_result"].approved is True
     assert final_state["status"] == "finalized"
+
+
+def test_branch_join_barrier_synchronization_guarantee():
+    """Verify that branch_join cannot execute after only one branch completes.
+    
+    Proves that the list-based edge topology `add_edge(['test_generator', 'reviewer'], 'branch_join')`
+    compiles a NamedBarrierValue channel in LangGraph, ensuring strict AND-synchronization.
+    """
+    # 1. Negative Test: Subgraph where coder only triggers test_generator (reviewer does not run)
+    partial_builder = StateGraph(AgentState)
+    join_executed = []
+
+    def mock_test_gen_only(s):
+        return {
+            "status": "testing",
+            "test_gen_result": TestGenResult(
+                test_files_modified=["test_sample.py"],
+                test_cases_added=["test_1"],
+                edge_cases_tested=[],
+                test_code_summary="Only test gen ran",
+            ),
+        }
+
+    def mock_reviewer_only(s):
+        return {
+            "status": "reviewing",
+            "review_result": ReviewResult(approved=True, quality_score=9.0, review_summary="Review"),
+        }
+
+    def tracking_branch_join(s):
+        join_executed.append("executed")
+        return branch_join_node(s)
+
+    partial_builder.add_node("test_generator", mock_test_gen_only)
+    partial_builder.add_node("reviewer", mock_reviewer_only)
+    partial_builder.add_node("branch_join", tracking_branch_join)
+
+    # Wire START to ONLY test_generator (reviewer is NOT triggered)
+    partial_builder.add_edge(START, "test_generator")
+    # Join barrier requiring BOTH branches
+    partial_builder.add_edge(["test_generator", "reviewer"], "branch_join")
+    partial_builder.add_edge("branch_join", END)
+
+    app_partial = partial_builder.compile()
+
+    # Invoke workflow where only test_generator completes
+    state_out = app_partial.invoke({"agent_history": [], "iteration_count": 1})
+
+    # CRITICAL EMPIRICAL PROOF: branch_join CANNOT execute when reviewer did not run!
+    assert len(join_executed) == 0, (
+        "Security & Orchestration Violation: branch_join executed prematurely after only one branch completed!"
+    )
+    assert state_out.get("status") == "testing"  # Stopped at test_generator
+    assert state_out.get("review_result") is None
+
+    # 2. Positive Test: When BOTH branches complete (with different latencies), barrier unlocks exactly once
+    full_builder = StateGraph(AgentState)
+    full_join_count = 0
+
+    def slow_reviewer(s):
+        time.sleep(0.05)  # Asymmetric execution latency
+        return {
+            "status": "reviewing",
+            "review_result": ReviewResult(approved=True, quality_score=9.0, review_summary="Done"),
+        }
+
+    def counting_join(s):
+        nonlocal full_join_count
+        full_join_count += 1
+        return branch_join_node(s)
+
+    full_builder.add_node("test_generator", mock_test_gen_only)
+    full_builder.add_node("reviewer", slow_reviewer)
+    full_builder.add_node("branch_join", counting_join)
+
+    full_builder.add_edge(START, "test_generator")
+    full_builder.add_edge(START, "reviewer")
+    full_builder.add_edge(["test_generator", "reviewer"], "branch_join")
+    full_builder.add_edge("branch_join", END)
+
+    app_full = full_builder.compile()
+    state_full = app_full.invoke({"agent_history": [], "iteration_count": 1})
+
+    # Barrier must execute EXACTLY ONCE
+    assert full_join_count == 1, f"Expected branch_join to execute exactly once, but got {full_join_count}"
+    assert state_full.get("test_gen_result") is not None
+    assert state_full.get("review_result") is not None
+    assert state_full.get("status") == "branch_joined"

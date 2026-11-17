@@ -685,8 +685,9 @@ def build_coding_agent_graph(
     workflow.add_edge("coder", "reviewer")
 
     # PARALLEL JOIN: Both parallel branches converge at branch_join barrier
-    workflow.add_edge("test_generator", "branch_join")
-    workflow.add_edge("reviewer", "branch_join")
+    # Explicit list-based join registers NamedBarrierValue in LangGraph Pregel,
+    # guaranteeing branch_join cannot execute until BOTH branches complete.
+    workflow.add_edge(["test_generator", "reviewer"], "branch_join")
 
     # Post-Join Pipeline: Sandboxed execution followed by Manager Evaluation
     workflow.add_edge("branch_join", "sandbox_runner")
