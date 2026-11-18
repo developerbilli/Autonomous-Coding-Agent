@@ -1559,8 +1559,8 @@ input[type="range"] {
     left: 50%;
     transform: translate(-50%, -50%) scale(0.96);
     width: 92%;
-    max-width: 680px;
-    max-height: 84vh;
+    max-width: 650px;
+    max-height: 90vh;
     background: rgba(15, 23, 42, 0.96);
     border: 1px solid rgba(148, 163, 184, 0.22);
     border-radius: 1rem;
@@ -1750,11 +1750,11 @@ input[type="range"] {
 }
 
 .folder-list-container {
-    flex: 1;
+    flex: 1 1 auto;
     overflow-y: auto;
-    padding: 0.6rem 1.4rem;
-    min-height: 240px;
-    max-height: 340px;
+    padding: 0.4rem 1.4rem;
+    min-height: 80px;
+    max-height: 160px;
 }
 
 .folder-loading {
@@ -1858,10 +1858,11 @@ input[type="range"] {
 .folder-modal-footer {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 1rem 1.4rem;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
     border-top: 1px solid rgba(148, 163, 184, 0.12);
-    background: rgba(15, 23, 42, 0.75);
+    background: rgba(15, 23, 42, 0.95);
+    flex-shrink: 0;
 }
 
 .folder-selected-preview {

@@ -308,8 +308,12 @@ async def choose_local_directory():
 async def browse_filesystem(path: Optional[str] = None):
     """Lists subdirectories in the specified path for the interactive folder chooser modal."""
     try:
-        if path and path.strip():
-            target_dir = Path(path.strip()).expanduser().resolve()
+        if path and path.strip('"\r\n'):
+            raw_path = path.strip('"\r\n')
+            p = Path(raw_path).expanduser()
+            if not p.exists() and Path(raw_path.strip()).exists():
+                p = Path(raw_path.strip()).expanduser()
+            target_dir = p.resolve()
         else:
             # Default to parent directory of workspace so user can easily see their project folders
             target_dir = BASE_DIR.parent if (BASE_DIR.parent and BASE_DIR.parent.exists()) else BASE_DIR
@@ -318,10 +322,11 @@ async def browse_filesystem(path: Optional[str] = None):
             target_dir = BASE_DIR
 
         entries = []
+        ignored_names = {"__pycache__", "node_modules", ".git", ".pytest_cache", ".idea", ".vscode", ".mypy_cache", ".DS_Store"}
         try:
             for item in sorted(target_dir.iterdir(), key=lambda p: p.name.lower()):
-                # Exclude internal hidden dirs (except .github) and common clutter
-                if item.name.startswith(".") and item.name not in [".github"]:
+                # Exclude internal hidden dirs (except .github) and common build clutter
+                if item.name in ignored_names or (item.name.startswith(".") and item.name not in [".github"]):
                     continue
                 if item.is_dir():
                     is_git = (item / ".git").exists()
@@ -378,7 +383,11 @@ async def browse_filesystem(path: Optional[str] = None):
 async def validate_filesystem_path(path: str):
     """Validates whether a given path is an accessible directory."""
     try:
-        p = Path(path.strip()).expanduser().resolve()
+        raw_path = path.strip('"\r\n')
+        p = Path(raw_path).expanduser()
+        if not p.exists() and Path(raw_path.strip()).exists():
+            p = Path(raw_path.strip()).expanduser()
+        p = p.resolve()
         if not p.exists():
             return {"valid": False, "error": "Path does not exist"}
         if not p.is_dir():
@@ -396,7 +405,11 @@ async def validate_filesystem_path(path: str):
 async def get_symbols(repo: Optional[str] = None):
     if not repo:
         return {"repo": "", "count": 0, "symbols": []}
-    target = Path(repo).resolve()
+    raw_path = repo.strip('"\r\n')
+    p = Path(raw_path).expanduser()
+    if not p.exists() and Path(raw_path.strip()).exists():
+        p = Path(raw_path.strip()).expanduser()
+    target = p.resolve()
     if not target.exists():
         return {"error": f"Path {target} does not exist", "symbols": []}
     

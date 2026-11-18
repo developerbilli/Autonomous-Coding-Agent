@@ -434,8 +434,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function cleanPath(val) {
+        if (!val) return "";
+        return val.replace(/^["']|["']$/g, "").replace(/^[\r\n]+|[\r\n]+$/g, "");
+    }
+
     function confirmFolderSelection() {
-        const path = (folderSelectedPathInput && folderSelectedPathInput.value.trim()) ? folderSelectedPathInput.value.trim() : selectedDirectoryPath;
+        let path = folderSelectedPathInput ? cleanPath(folderSelectedPathInput.value) : selectedDirectoryPath;
         if (!path) {
             alert("Please choose a valid folder.");
             return;
@@ -571,7 +576,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. AST Symbol Scanner & Filtering
     // ==========================================
     async function fetchSymbols() {
-        const repo = repoPathInput.value.trim();
+        const repo = cleanPath(repoPathInput ? repoPathInput.value : "");
         if (!repo) {
             renderSymbols([]);
             symbolCountPill.textContent = "0";
@@ -788,7 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let githubUrl = null;
         let branch = "main";
         let authToken = null;
-        let localPath = repoPathInput ? repoPathInput.value.trim() : "";
+        let localPath = repoPathInput ? cleanPath(repoPathInput.value) : "";
         let zipBase64 = null;
         let projectName = null;
         let isolateLocal = isolateLocalCheck ? isolateLocalCheck.checked : false;
