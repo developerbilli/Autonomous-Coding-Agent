@@ -563,11 +563,14 @@ def manager_finalize_node(state: AgentState, config: Optional[RunnableConfig] = 
         try:
             mem_engine = get_memory_engine()
             evidence_tag = "unit_tests_passed" if task_succeeded else "verification_failed"
+            repo_path = state.get("repo_path", "")
+            repo_id = Path(repo_path).name if repo_path else "repo"
             for pat_id in applied_pats:
                 mem_engine.semantic_store.record_reuse(
                     pattern_id=pat_id,
                     success=task_succeeded,
                     evidence=evidence_tag,
+                    repo_identifier=repo_id,
                 )
         except Exception as e:
             logger.warning(f"Could not record semantic pattern reuse: {e}")

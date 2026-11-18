@@ -10,6 +10,23 @@ from agent.memory.episodic_memory import EpisodicMemoryStore
 from agent.memory.semantic_memory import SemanticMemoryStore
 
 
+ECOSYSTEM_KEYWORDS: Dict[str, List[str]] = {
+    "postgresql": ["postgres", "postgresql", "psycopg", "pg_"],
+    "mongodb": ["mongo", "mongodb", "pymongo", "motor"],
+    "mysql": ["mysql", "mariadb"],
+    "sqlite": ["sqlite", "sqlite3"],
+    "redis": ["redis", "celery_broker"],
+}
+
+FRAMEWORK_KEYWORDS: Dict[str, List[str]] = {
+    "fastapi": ["fastapi", "uvicorn", "starlette"],
+    "flask": ["flask", "werkzeug"],
+    "django": ["django"],
+    "pytest": ["pytest"],
+    "react": ["react", "jsx", "tsx"],
+}
+
+
 class MemoryEngine:
     """Central engine providing unified episodic remediation recall and semantic rule retrieval."""
 
@@ -28,16 +45,38 @@ class MemoryEngine:
         task: str,
         repo_identifier: Optional[str] = None,
         error_signature: Optional[str] = None,
+        framework: Optional[str] = None,
+        ecosystem: Optional[str] = None,
+        language: Optional[str] = "python",
         episode_limit: int = 3,
         pattern_limit: int = 3,
         include_anti_patterns: bool = True,
         strict_repo_scoping: bool = True,
     ) -> Dict[str, Any]:
         """Recalls episodic remediations, anti-pattern warnings, and semantic rules under retention governance."""
+        # Auto-detect ecosystem and framework constraints if not explicitly passed
+        search_context = f"{task} {error_signature or ''}".lower()
+        detected_ecosystem = ecosystem
+        if not detected_ecosystem:
+            for eco, kws in ECOSYSTEM_KEYWORDS.items():
+                if any(kw in search_context for kw in kws):
+                    detected_ecosystem = eco
+                    break
+
+        detected_framework = framework
+        if not detected_framework:
+            for fw, kws in FRAMEWORK_KEYWORDS.items():
+                if any(kw in search_context for kw in kws):
+                    detected_framework = fw
+                    break
+
         # 1. Query episodic memory for active, proven remediations
         query = MemoryQuery(
             query_text=task,
             repo_identifier=repo_identifier,
+            framework=detected_framework,
+            ecosystem=detected_ecosystem,
+            language=language,
             error_signature=error_signature,
             limit=episode_limit,
             include_anti_patterns=include_anti_patterns,
@@ -50,11 +89,14 @@ class MemoryEngine:
         if include_anti_patterns:
             anti_patterns = self.episodic_store.recall_anti_patterns(query)
 
-        # 3. Query semantic memory for validated architectural patterns
+        # 3. Query semantic memory for validated architectural patterns with scope & ecosystem gating
         search_query = f"{task} {error_signature or ''}".strip()
         patterns = self.semantic_store.recall_patterns(
             query=search_query,
             repo_identifier=repo_identifier,
+            framework=detected_framework,
+            ecosystem=detected_ecosystem,
+            language=language,
             limit=pattern_limit,
         )
 
@@ -167,8 +209,25 @@ class MemoryEngine:
         title: str,
         content: str,
         tags: List[str],
+        scope: Optional[str] = None,
+        framework: Optional[str] = None,
+        ecosystem: Optional[str] = None,
+        constraints: Optional[Dict[str, Any]] = None,
+        origin_repos: Optional[List[str]] = None,
     ) -> Optional[SemanticPattern]:
-        """Promotes an episodic remediation into a permanent semantic pattern after validation."""
+        """Promotes an episodic remediation into a permanent semantic pattern with scope and environment constraints."""
+        repos = list(origin_repos or [])
+        repo_id = None
+        try:
+            with self.episodic_store._get_connection() as conn:
+                row = conn.execute("SELECT repo_identifier FROM episodes WHERE episode_id = ?;", (episode_id,)).fetchone()
+                if row and row["repo_identifier"]:
+                    repo_id = row["repo_identifier"]
+                    if repo_id not in repos:
+                        repos.append(repo_id)
+        except Exception:
+            pass
+
         pattern = self.semantic_store.promote_from_episode(
             episode_id=episode_id,
             title=title,
@@ -176,7 +235,12 @@ class MemoryEngine:
             topic=topic,
             tags=tags,
             confidence=0.95,
-            scope="global",
+            scope=scope,
+            framework=framework,
+            ecosystem=ecosystem,
+            constraints=constraints,
+            origin_repos=repos,
+            repo_identifier=repo_id,
         )
         return pattern
 

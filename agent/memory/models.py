@@ -42,11 +42,15 @@ class SemanticPattern(BaseModel):
     successful_reuses: int = 0  # Count of downstream workflows where pattern was reused and passed
     failed_reuses: int = 0  # Count of downstream workflows where pattern resulted in regression
     language: str = "python"  # python, typescript, polyglot
+    framework: Optional[str] = None  # fastapi, django, flask, pytest, express, etc.
+    ecosystem: Optional[str] = None  # postgresql, mongodb, redis, sqlite, docker, etc.
+    constraints: Dict[str, Any] = Field(default_factory=dict)  # environment / version constraints
     validation_evidence: List[str] = Field(default_factory=list)  # Empirical receipts (e.g. unit_tests_passed)
     last_verified: Optional[str] = None  # Timestamp of latest verification
     status: str = "active"  # active, deprecated, invalidated
-    scope: str = "global"  # global, framework, repository
+    scope: str = "global"  # global, ecosystem, repository
     origin_episodes: List[str] = Field(default_factory=list)  # Episode IDs whose validation promoted this
+    origin_repos: List[str] = Field(default_factory=list)  # Repository IDs where pattern was validated
     validation_count: int = 1
     last_validated_at: Optional[str] = None
 
@@ -65,6 +69,9 @@ class MemoryQuery(BaseModel):
     """Specification for querying semantic and episodic memory stores under retention governance."""
     query_text: str
     repo_identifier: Optional[str] = None
+    framework: Optional[str] = None
+    ecosystem: Optional[str] = None
+    language: Optional[str] = "python"
     error_signature: Optional[str] = None
     limit: int = 3
     include_anti_patterns: bool = True

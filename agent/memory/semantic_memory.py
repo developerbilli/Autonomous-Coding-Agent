@@ -8,7 +8,7 @@ import json
 import sqlite3
 import time
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Dict, Any
 
 from agent.memory.models import SemanticPattern
 
@@ -44,11 +44,15 @@ class SemanticMemoryStore:
                     successful_reuses INTEGER NOT NULL DEFAULT 0,
                     failed_reuses INTEGER NOT NULL DEFAULT 0,
                     language TEXT NOT NULL DEFAULT 'python',
+                    framework TEXT DEFAULT NULL,
+                    ecosystem TEXT DEFAULT NULL,
+                    constraints TEXT NOT NULL DEFAULT '{}',
                     validation_evidence TEXT NOT NULL DEFAULT '[]',
                     last_verified TEXT,
                     status TEXT NOT NULL DEFAULT 'active',
                     scope TEXT NOT NULL DEFAULT 'global',
                     origin_episodes TEXT NOT NULL DEFAULT '[]',
+                    origin_repos TEXT NOT NULL DEFAULT '[]',
                     validation_count INTEGER NOT NULL DEFAULT 1,
                     last_validated_at TEXT
                 );
@@ -60,11 +64,15 @@ class SemanticMemoryStore:
                 ("successful_reuses", "INTEGER NOT NULL", "0"),
                 ("failed_reuses", "INTEGER NOT NULL", "0"),
                 ("language", "TEXT NOT NULL", "'python'"),
+                ("framework", "TEXT", "NULL"),
+                ("ecosystem", "TEXT", "NULL"),
+                ("constraints", "TEXT NOT NULL", "'{}'"),
                 ("validation_evidence", "TEXT NOT NULL", "'[]'"),
                 ("last_verified", "TEXT", "NULL"),
                 ("status", "TEXT NOT NULL", "'active'"),
                 ("scope", "TEXT NOT NULL", "'global'"),
                 ("origin_episodes", "TEXT NOT NULL", "'[]'"),
+                ("origin_repos", "TEXT NOT NULL", "'[]'"),
                 ("validation_count", "INTEGER NOT NULL", "1"),
                 ("last_validated_at", "TEXT", "NULL"),
             ]:
@@ -74,6 +82,8 @@ class SemanticMemoryStore:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_pattern_topic ON semantic_patterns (topic);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_pattern_repo ON semantic_patterns (repo_identifier);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_pattern_status ON semantic_patterns (status);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_pattern_ecosystem ON semantic_patterns (ecosystem);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_pattern_scope ON semantic_patterns (scope);")
             conn.commit()
 
         # Seed standard engineering best practices if table is empty
@@ -88,9 +98,10 @@ class SemanticMemoryStore:
                     pattern_id, pattern, pattern_type, repo_identifier,
                     topic, title, content, tags, confidence,
                     successful_reuses, failed_reuses, language,
+                    framework, ecosystem, constraints,
                     validation_evidence, last_verified, status, scope,
-                    origin_episodes, validation_count, last_validated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    origin_episodes, origin_repos, validation_count, last_validated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """,
                 (
                     pattern.pattern_id,
@@ -105,11 +116,15 @@ class SemanticMemoryStore:
                     pattern.successful_reuses,
                     pattern.failed_reuses,
                     pattern.language,
+                    pattern.framework,
+                    pattern.ecosystem,
+                    json.dumps(pattern.constraints),
                     json.dumps(pattern.validation_evidence),
                     pattern.last_verified,
                     pattern.status,
                     pattern.scope,
                     json.dumps(pattern.origin_episodes),
+                    json.dumps(pattern.origin_repos),
                     pattern.validation_count,
                     pattern.last_validated_at,
                 ),
@@ -121,6 +136,7 @@ class SemanticMemoryStore:
         pattern_id: str,
         success: bool,
         evidence: Optional[str] = None,
+        repo_identifier: Optional[str] = None,
     ) -> Optional[SemanticPattern]:
         """Records downstream reuse outcome, updating empirical confidence and validation evidence."""
         with self._get_connection() as conn:
@@ -133,6 +149,27 @@ class SemanticMemoryStore:
                 pat.successful_reuses += 1
                 if evidence and evidence not in pat.validation_evidence:
                     pat.validation_evidence.append(evidence)
+
+                # Record origin repo for cross-repository validation tracking
+                if repo_identifier and repo_identifier not in pat.origin_repos:
+                    pat.origin_repos.append(repo_identifier)
+
+                # Cross-Repository Validation Gate:
+                # If verified in at least 2 distinct repositories with high confidence and no failures,
+                # elevate scope appropriately.
+                distinct_repos = set(pat.origin_repos)
+                if len(distinct_repos) >= 2 and pat.successful_reuses >= 2 and pat.failed_reuses == 0 and pat.confidence >= 0.85:
+                    if not pat.ecosystem and not pat.framework and pat.scope != "global":
+                        pat.scope = "global"
+                        pat.repo_identifier = "global"
+                        receipt = f"promoted_to_global:cross_repo_verified:{len(distinct_repos)}_repos"
+                        if receipt not in pat.validation_evidence:
+                            pat.validation_evidence.append(receipt)
+                    elif pat.scope == "repository" and (pat.ecosystem or pat.framework):
+                        pat.scope = "ecosystem"
+                        receipt = f"promoted_to_ecosystem:cross_repo_verified:{len(distinct_repos)}_repos"
+                        if receipt not in pat.validation_evidence:
+                            pat.validation_evidence.append(receipt)
             else:
                 pat.failed_reuses += 1
                 if evidence:
@@ -168,19 +205,39 @@ class SemanticMemoryStore:
         topic: str,
         tags: List[str],
         confidence: float = 0.85,
-        scope: str = "global",
+        scope: Optional[str] = None,
         language: str = "python",
+        framework: Optional[str] = None,
+        ecosystem: Optional[str] = None,
+        constraints: Optional[Dict[str, Any]] = None,
+        origin_repos: Optional[List[str]] = None,
+        repo_identifier: Optional[str] = None,
         validation_evidence: Optional[List[str]] = None,
     ) -> SemanticPattern:
         """Promotes a verified episodic remediation into semantic memory with empirical evidence."""
         pattern_id = f"pat_promoted_{topic[:12]}_{episode_id[-8:]}"
         evidence = validation_evidence or ["unit_tests_passed", "reviewer_score_verified"]
         now_str = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+        # Determine effective scope:
+        # If technology ecosystem or framework is specified, scope CANNOT be global!
+        # It must be scoped to 'ecosystem' or 'repository' to avoid contaminating other ecosystems.
+        effective_scope = scope
+        if effective_scope is None:
+            if ecosystem or framework:
+                effective_scope = "ecosystem"
+            else:
+                effective_scope = "global"
+        elif effective_scope == "global" and (ecosystem or framework):
+            # Guardrail: Global promotion with ecosystem-specific constraints is capped at ecosystem
+            effective_scope = "ecosystem"
+
+        repos = origin_repos or ([repo_identifier] if repo_identifier else [])
         pattern = SemanticPattern(
             pattern_id=pattern_id,
             pattern=title,
             pattern_type="convention",
-            repo_identifier="global" if scope == "global" else "promoted",
+            repo_identifier=repo_identifier or ("global" if effective_scope == "global" else "promoted"),
             topic=topic,
             title=title,
             content=content,
@@ -189,11 +246,15 @@ class SemanticMemoryStore:
             successful_reuses=1,
             failed_reuses=0,
             language=language,
+            framework=framework,
+            ecosystem=ecosystem,
+            constraints=constraints or {},
             validation_evidence=evidence,
             last_verified=now_str,
             status="active",
-            scope=scope,
+            scope=effective_scope,
             origin_episodes=[episode_id],
+            origin_repos=repos,
             validation_count=2,
             last_validated_at=now_str,
         )
@@ -215,17 +276,27 @@ class SemanticMemoryStore:
             successful_reuses=int(row["successful_reuses"]) if "successful_reuses" in keys else 0,
             failed_reuses=int(row["failed_reuses"]) if "failed_reuses" in keys else 0,
             language=row["language"] if "language" in keys else "python",
+            framework=row["framework"] if ("framework" in keys and row["framework"]) else None,
+            ecosystem=row["ecosystem"] if ("ecosystem" in keys and row["ecosystem"]) else None,
+            constraints=json.loads(row["constraints"]) if ("constraints" in keys and row["constraints"]) else {},
             validation_evidence=json.loads(row["validation_evidence"]) if "validation_evidence" in keys else [],
             last_verified=row["last_verified"] if "last_verified" in keys else None,
             status=row["status"] if "status" in keys else "active",
             scope=row["scope"] if "scope" in keys else "global",
             origin_episodes=json.loads(row["origin_episodes"]) if "origin_episodes" in keys else [],
+            origin_repos=json.loads(row["origin_repos"]) if ("origin_repos" in keys and row["origin_repos"]) else [],
             validation_count=int(row["validation_count"]) if "validation_count" in keys else 1,
             last_validated_at=row["last_validated_at"] if "last_validated_at" in keys else None,
         )
 
     def recall_patterns(
-        self, query: str, repo_identifier: Optional[str] = None, limit: int = 5
+        self,
+        query: str,
+        repo_identifier: Optional[str] = None,
+        framework: Optional[str] = None,
+        ecosystem: Optional[str] = None,
+        language: Optional[str] = None,
+        limit: int = 5,
     ) -> List[SemanticPattern]:
         """Recalls relevant patterns ranked by relevance, empirical confidence, and reuse evidence."""
         with self._get_connection() as conn:
@@ -240,6 +311,49 @@ class SemanticMemoryStore:
         for row in rows:
             pat = self._row_to_pattern(row)
 
+            # ----------------------------------------------------
+            # Strict Scope & Compatibility Gating
+            # ----------------------------------------------------
+
+            # 1. Repository Scope Isolation:
+            # If a pattern is scoped to a specific repository, it MUST NEVER leak to another.
+            if pat.scope == "repository":
+                if not repo_identifier or (pat.repo_identifier != "global" and pat.repo_identifier != repo_identifier):
+                    continue
+
+            # 2. Ecosystem Conflict Gate:
+            # e.g., A PostgreSQL connection pattern MUST NEVER match a MongoDB task.
+            if ecosystem and pat.ecosystem:
+                if pat.ecosystem.lower() != ecosystem.lower():
+                    continue
+
+            # 3. Ecosystem & Framework Scope Gate:
+            # Patterns scoped to 'ecosystem' must match the querying framework or ecosystem.
+            if pat.scope == "ecosystem":
+                if pat.framework:
+                    if not framework or pat.framework.lower() != framework.lower():
+                        continue
+                if pat.ecosystem:
+                    if not ecosystem or pat.ecosystem.lower() != ecosystem.lower():
+                        continue
+                if not pat.framework and not pat.ecosystem:
+                    if not (repo_identifier and pat.repo_identifier == repo_identifier):
+                        continue
+
+            # 4. Framework Conflict Gate:
+            # e.g., A Django ORM pattern MUST NEVER match a FastAPI / Pydantic task.
+            if framework and pat.framework:
+                if pat.framework.lower() != framework.lower():
+                    continue
+
+            # 5. Language Isolation Gate:
+            if language and pat.language and pat.language.lower() != "polyglot":
+                if pat.language.lower() != language.lower():
+                    continue
+
+            # ----------------------------------------------------
+            # Relevance & Alignment Scoring
+            # ----------------------------------------------------
             score = 0.0
             # Tag match bonus
             for tag in pat.tags:
@@ -254,7 +368,15 @@ class SemanticMemoryStore:
             content_tokens = self._tokenize(pat.content)
             score += len(query_tokens.intersection(content_tokens)) * 0.5
 
-            # Scope bonus
+            # Ecosystem alignment bonus
+            if ecosystem and pat.ecosystem and pat.ecosystem.lower() == ecosystem.lower():
+                score += 2.5
+
+            # Framework alignment bonus
+            if framework and pat.framework and pat.framework.lower() == framework.lower():
+                score += 2.0
+
+            # Scope / Repository bonus
             if repo_identifier and pat.repo_identifier in (repo_identifier, "global"):
                 score += 1.0
 
@@ -280,9 +402,6 @@ class SemanticMemoryStore:
         scored.sort(key=lambda x: x[0], reverse=True)
         return [p for _, p in scored[:limit]]
 
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return [p for _, p in scored[:limit]]
-
     def seed_default_patterns(self) -> None:
         """Seeds common software engineering and repository patterns."""
         with self._get_connection() as conn:
@@ -300,6 +419,7 @@ class SemanticMemoryStore:
                 content="Functions accepting numeric or bounded inputs (length, count, index) must validate arguments early and raise ValueError with clear descriptive messages on out-of-range or negative inputs.",
                 tags=["validation", "valueerror", "guard", "bounds", "inputs", "security"],
                 confidence=1.0,
+                scope="global",
             ),
             SemanticPattern(
                 pattern_id="pat_pytest_clean",
@@ -310,6 +430,8 @@ class SemanticMemoryStore:
                 content="Tests should use pytest.raises() for boundary guard assertions, test empty and negative inputs, and avoid shared mutable state between test functions.",
                 tags=["pytest", "unit_test", "boundary", "fixtures", "raises"],
                 confidence=1.0,
+                framework="pytest",
+                scope="global",
             ),
             SemanticPattern(
                 pattern_id="pat_password_generator",
@@ -320,6 +442,7 @@ class SemanticMemoryStore:
                 content="generate_password(length, include_symbols, include_numbers) should require length >= 4, use secrets.choice for cryptographic randomness, and calculate_strength(password) returns a dict with score, entropy, and complexity assessment.",
                 tags=["password", "generator", "strength", "crypto", "entropy", "random"],
                 confidence=1.0,
+                scope="global",
             ),
             SemanticPattern(
                 pattern_id="pat_sse_streaming",
@@ -330,6 +453,8 @@ class SemanticMemoryStore:
                 content="Real-time telemetry endpoints must stream data: {json}\\n\\n formatted payloads with non-blocking event-loop yields (asyncio.sleep) and proper Cache-Control: no-cache headers.",
                 tags=["fastapi", "sse", "streaming", "events", "telemetry"],
                 confidence=1.0,
+                framework="fastapi",
+                scope="ecosystem",
             ),
         ]
 
