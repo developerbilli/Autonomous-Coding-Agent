@@ -145,7 +145,7 @@ async def health_check():
     sandbox_status = "healthy"
     sandbox_info = {}
     try:
-        sb = ExecutionSandbox(str(BASE_DIR / "calculator_repo"))
+        sb = ExecutionSandbox(str(BASE_DIR))
         sandbox_info = sb.get_security_status()
     except Exception as e:
         sandbox_status = f"degraded: {e}"
@@ -303,6 +303,94 @@ async def choose_local_directory():
     if selected_path:
         return {"success": True, "path": selected_path}
     return {"success": False, "cancelled": True}
+
+@app.get("/api/fs/browse")
+async def browse_filesystem(path: Optional[str] = None):
+    """Lists subdirectories in the specified path for the interactive folder chooser modal."""
+    try:
+        if path and path.strip():
+            target_dir = Path(path.strip()).expanduser().resolve()
+        else:
+            # Default to parent directory of workspace so user can easily see their project folders
+            target_dir = BASE_DIR.parent if (BASE_DIR.parent and BASE_DIR.parent.exists()) else BASE_DIR
+
+        if not target_dir.exists() or not target_dir.is_dir():
+            target_dir = BASE_DIR
+
+        entries = []
+        try:
+            for item in sorted(target_dir.iterdir(), key=lambda p: p.name.lower()):
+                # Exclude internal hidden dirs (except .github) and common clutter
+                if item.name.startswith(".") and item.name not in [".github"]:
+                    continue
+                if item.is_dir():
+                    is_git = (item / ".git").exists()
+                    has_code = is_git or any(item.glob("*.py")) or any(item.glob("*.js")) or any(item.glob("*.ts"))
+                    entries.append({
+                        "name": item.name,
+                        "path": str(item),
+                        "is_git": is_git,
+                        "has_code": has_code,
+                    })
+        except PermissionError:
+            pass
+
+        # Build breadcrumbs
+        breadcrumbs = []
+        curr = target_dir
+        parts = []
+        while curr and curr != curr.parent:
+            parts.append({"name": curr.name or str(curr), "path": str(curr)})
+            curr = curr.parent
+        if curr:
+            parts.append({"name": "/", "path": "/"})
+        breadcrumbs = list(reversed(parts))
+
+        # Common bookmarks
+        home_dir = Path.home()
+        bookmarks = [
+            {"name": "Current Project", "path": str(BASE_DIR), "icon": "📂"},
+        ]
+        if BASE_DIR.parent and BASE_DIR.parent.exists() and BASE_DIR.parent != BASE_DIR:
+            bookmarks.append({"name": "Projects", "path": str(BASE_DIR.parent), "icon": "📁"})
+        if (home_dir / "Desktop").exists():
+            bookmarks.append({"name": "Desktop", "path": str(home_dir / "Desktop"), "icon": "💻"})
+        if (home_dir / "Documents").exists():
+            bookmarks.append({"name": "Documents", "path": str(home_dir / "Documents"), "icon": "📄"})
+        bookmarks.append({"name": "Home", "path": str(home_dir), "icon": "🏠"})
+
+        parent_path = str(target_dir.parent) if target_dir.parent != target_dir else None
+
+        return {
+            "success": True,
+            "current_path": str(target_dir),
+            "parent_path": parent_path,
+            "breadcrumbs": breadcrumbs,
+            "bookmarks": bookmarks,
+            "folders": entries,
+            "is_git": (target_dir / ".git").exists(),
+        }
+    except Exception as e:
+        logger.exception(f"Error browsing filesystem: {e}")
+        return {"success": False, "error": str(e), "current_path": str(BASE_DIR), "folders": []}
+
+@app.get("/api/fs/validate")
+async def validate_filesystem_path(path: str):
+    """Validates whether a given path is an accessible directory."""
+    try:
+        p = Path(path.strip()).expanduser().resolve()
+        if not p.exists():
+            return {"valid": False, "error": "Path does not exist"}
+        if not p.is_dir():
+            return {"valid": False, "error": "Path is a file, not a directory"}
+        return {
+            "valid": True,
+            "path": str(p),
+            "is_git": (p / ".git").exists(),
+            "name": p.name,
+        }
+    except Exception as e:
+        return {"valid": False, "error": str(e)}
 
 @app.get("/api/symbols")
 async def get_symbols(repo: Optional[str] = None):

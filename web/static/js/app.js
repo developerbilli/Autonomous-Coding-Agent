@@ -252,10 +252,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 langsmithBadge.className = "status-pill offline";
                 langsmithBadge.querySelector(".status-text").textContent = "LangSmith: Offline (Local)";
             }
-
-            if (data.default_repo && !repoPathInput.value) {
-                repoPathInput.value = data.default_repo;
-            }
         } catch (err) {
             console.warn("Status check failed:", err);
         }
@@ -280,46 +276,229 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    async function handleChooseFolder() {
-        try {
-            const res = await fetch("/api/choose-dir", { method: "POST" });
-            const data = await res.json();
-            if (data.success && data.path) {
-                repoPathInput.value = data.path;
-                fetchSymbols();
-                addTerminalLog("info", `Selected local repository: ${data.path}`);
-                return;
-            } else if (data.cancelled) {
-                return;
-            }
-        } catch (err) {
-            console.warn("Native folder picker unavailable, falling back to browser dialog:", err);
-        }
+    // =========================================================================
+    // Folder Chooser Modal Logic (In-Browser Directory Explorer)
+    // =========================================================================
+    const folderModal = document.getElementById("folder-modal");
+    const folderModalBackdrop = document.getElementById("folder-modal-backdrop");
+    const btnCloseFolderModal = document.getElementById("btn-close-folder-modal");
+    const btnCancelFolderModal = document.getElementById("btn-cancel-folder-modal");
+    const btnConfirmFolderModal = document.getElementById("btn-confirm-folder-modal");
+    const folderBookmarksContainer = document.getElementById("folder-modal-bookmarks");
+    const folderBreadcrumbsContainer = document.getElementById("folder-breadcrumbs");
+    const folderListContainer = document.getElementById("folder-list");
+    const folderListLoading = document.getElementById("folder-list-loading");
+    const folderSearchInput = document.getElementById("folder-search-input");
+    const folderSelectedPathInput = document.getElementById("folder-selected-path");
+    const btnFolderUp = document.getElementById("btn-folder-up");
+    const btnFolderRefresh = document.getElementById("btn-folder-refresh");
 
-        // Browser fallback: File System Access API
-        if (window.showDirectoryPicker) {
-            try {
-                const dirHandle = await window.showDirectoryPicker();
-                if (dirHandle && dirHandle.name) {
-                    repoPathInput.value = dirHandle.name;
-                    fetchSymbols();
-                    addTerminalLog("info", `Selected local directory: ${dirHandle.name}`);
-                    return;
-                }
-            } catch (e) {
-                if (e.name !== "AbortError") console.warn(e);
-                return;
-            }
-        }
+    let currentBrowsePath = "";
+    let parentBrowsePath = null;
+    let selectedDirectoryPath = "";
+    let loadedFolders = [];
 
-        // Standard input file directory fallback
-        if (localDirFilePicker) {
-            localDirFilePicker.click();
+    function openFolderModal(initialPath) {
+        if (!folderModal || !folderModalBackdrop) return;
+        folderModal.classList.add("open");
+        folderModalBackdrop.classList.add("open");
+        const startPath = (initialPath && initialPath.trim()) ? initialPath.trim() : (repoPathInput ? repoPathInput.value.trim() : "");
+        loadDirectory(startPath);
+        if (folderSearchInput) {
+            folderSearchInput.value = "";
+            folderSearchInput.focus();
         }
     }
 
-    if (btnBrowseFolder) btnBrowseFolder.addEventListener("click", handleChooseFolder);
-    if (btnBrowseInline) btnBrowseInline.addEventListener("click", handleChooseFolder);
+    function closeFolderModal() {
+        if (!folderModal || !folderModalBackdrop) return;
+        folderModal.classList.remove("open");
+        folderModalBackdrop.classList.remove("open");
+    }
+
+    async function loadDirectory(path) {
+        if (!folderListContainer) return;
+        if (folderListLoading) folderListLoading.style.display = "flex";
+        folderListContainer.innerHTML = "";
+
+        try {
+            const url = path ? `/api/fs/browse?path=${encodeURIComponent(path)}` : "/api/fs/browse";
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (!data.success) {
+                folderListContainer.innerHTML = `<div class="folder-empty">⚠️ ${data.error || "Could not read directory."}</div>`;
+                return;
+            }
+
+            currentBrowsePath = data.current_path;
+            parentBrowsePath = data.parent_path;
+            selectedDirectoryPath = data.current_path;
+            if (folderSelectedPathInput) folderSelectedPathInput.value = data.current_path;
+
+            if (btnFolderUp) {
+                btnFolderUp.disabled = !parentBrowsePath;
+            }
+
+            // Render Bookmarks
+            if (folderBookmarksContainer && data.bookmarks) {
+                folderBookmarksContainer.innerHTML = "";
+                data.bookmarks.forEach(bm => {
+                    const chip = document.createElement("button");
+                    chip.type = "button";
+                    chip.className = "folder-bookmark-chip";
+                    chip.innerHTML = `<span>${bm.icon || "📁"}</span><span>${bm.name}</span>`;
+                    chip.title = bm.path;
+                    chip.addEventListener("click", () => loadDirectory(bm.path));
+                    folderBookmarksContainer.appendChild(chip);
+                });
+            }
+
+            // Render Breadcrumbs
+            if (folderBreadcrumbsContainer && data.breadcrumbs) {
+                folderBreadcrumbsContainer.innerHTML = "";
+                data.breadcrumbs.forEach((crumb, idx) => {
+                    if (idx > 0) {
+                        const sep = document.createElement("span");
+                        sep.className = "folder-breadcrumb-sep";
+                        sep.textContent = "/";
+                        folderBreadcrumbsContainer.appendChild(sep);
+                    }
+                    const pill = document.createElement("span");
+                    pill.className = "folder-breadcrumb-pill";
+                    pill.textContent = crumb.name;
+                    pill.title = crumb.path;
+                    pill.addEventListener("click", () => loadDirectory(crumb.path));
+                    folderBreadcrumbsContainer.appendChild(pill);
+                });
+                folderBreadcrumbsContainer.scrollLeft = folderBreadcrumbsContainer.scrollWidth;
+            }
+
+            loadedFolders = data.folders || [];
+            renderFolderList(folderSearchInput ? folderSearchInput.value : "");
+
+        } catch (err) {
+            folderListContainer.innerHTML = `<div class="folder-empty">⚠️ Error loading directory: ${err.message}</div>`;
+        } finally {
+            if (folderListLoading) folderListLoading.style.display = "none";
+        }
+    }
+
+    function renderFolderList(filterText = "") {
+        if (!folderListContainer) return;
+        folderListContainer.innerHTML = "";
+
+        const query = (filterText || "").trim().toLowerCase();
+        const filtered = loadedFolders.filter(f => !query || f.name.toLowerCase().includes(query));
+
+        if (filtered.length === 0) {
+            folderListContainer.innerHTML = `<div class="folder-empty">No subdirectories found in this folder.</div>`;
+            return;
+        }
+
+        filtered.forEach(item => {
+            const el = document.createElement("div");
+            el.className = "folder-item";
+            if (item.path === selectedDirectoryPath) {
+                el.classList.add("selected");
+            }
+
+            const gitBadge = item.is_git ? `<span class="folder-badge-git">GIT</span>` : "";
+            const codeIcon = item.has_code ? "📦" : "📁";
+
+            el.innerHTML = `
+                <div class="folder-item-left">
+                    <span class="folder-item-icon">${codeIcon}</span>
+                    <span class="folder-item-name" title="${item.path}">${item.name}</span>
+                </div>
+                <div class="folder-item-meta">
+                    ${gitBadge}
+                    <span class="folder-item-arrow">➜</span>
+                </div>
+            `;
+
+            // Single click selects
+            el.addEventListener("click", () => {
+                document.querySelectorAll(".folder-item").forEach(node => node.classList.remove("selected"));
+                el.classList.add("selected");
+                selectedDirectoryPath = item.path;
+                if (folderSelectedPathInput) folderSelectedPathInput.value = item.path;
+            });
+
+            // Double click opens directory
+            el.addEventListener("dblclick", () => {
+                loadDirectory(item.path);
+            });
+
+            folderListContainer.appendChild(el);
+        });
+    }
+
+    function confirmFolderSelection() {
+        const path = (folderSelectedPathInput && folderSelectedPathInput.value.trim()) ? folderSelectedPathInput.value.trim() : selectedDirectoryPath;
+        if (!path) {
+            alert("Please choose a valid folder.");
+            return;
+        }
+        if (repoPathInput) {
+            repoPathInput.value = path;
+        }
+        closeFolderModal();
+        fetchSymbols();
+        addTerminalLog("system", `📂 Local repository selected: ${path}`);
+    }
+
+    if (btnBrowseFolder) btnBrowseFolder.addEventListener("click", () => openFolderModal(repoPathInput ? repoPathInput.value : ""));
+    if (btnBrowseInline) btnBrowseInline.addEventListener("click", () => openFolderModal(repoPathInput ? repoPathInput.value : ""));
+    if (btnCloseFolderModal) btnCloseFolderModal.addEventListener("click", closeFolderModal);
+    if (btnCancelFolderModal) btnCancelFolderModal.addEventListener("click", closeFolderModal);
+    if (folderModalBackdrop) folderModalBackdrop.addEventListener("click", closeFolderModal);
+    if (btnConfirmFolderModal) btnConfirmFolderModal.addEventListener("click", confirmFolderSelection);
+
+    if (btnFolderUp) {
+        btnFolderUp.addEventListener("click", () => {
+            if (parentBrowsePath) loadDirectory(parentBrowsePath);
+        });
+    }
+
+    if (btnFolderRefresh) {
+        btnFolderRefresh.addEventListener("click", () => {
+            loadDirectory(currentBrowsePath);
+        });
+    }
+
+    if (folderSearchInput) {
+        folderSearchInput.addEventListener("input", (e) => {
+            renderFolderList(e.target.value);
+        });
+        folderSearchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const firstItem = folderListContainer ? folderListContainer.querySelector(".folder-item") : null;
+                if (firstItem) {
+                    firstItem.click();
+                    confirmFolderSelection();
+                }
+            } else if (e.key === "Escape") {
+                closeFolderModal();
+            }
+        });
+    }
+
+    if (folderSelectedPathInput) {
+        folderSelectedPathInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                confirmFolderSelection();
+            } else if (e.key === "Escape") {
+                closeFolderModal();
+            }
+        });
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && folderModal && folderModal.classList.contains("open")) {
+            closeFolderModal();
+        }
+    });
 
     if (localDirFilePicker) {
         localDirFilePicker.addEventListener("change", (e) => {

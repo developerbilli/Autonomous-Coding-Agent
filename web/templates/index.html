@@ -380,6 +380,58 @@
         </main>
     </div>
 
+    <!-- Folder Picker Modal -->
+    <div id="folder-modal-backdrop" class="folder-modal-backdrop"></div>
+    <div id="folder-modal" class="folder-modal" role="dialog" aria-modal="true" aria-labelledby="folder-modal-title">
+        <div class="folder-modal-header">
+            <div class="folder-modal-title-group">
+                <span class="folder-modal-icon">📁</span>
+                <div>
+                    <h3 id="folder-modal-title">Select Local Repository Directory</h3>
+                    <span class="folder-modal-subtitle">Browse and select a project folder on your machine</span>
+                </div>
+            </div>
+            <button type="button" id="btn-close-folder-modal" class="btn-icon-close" title="Close">✕</button>
+        </div>
+
+        <div class="folder-modal-bookmarks" id="folder-modal-bookmarks">
+            <!-- Bookmark chips rendered dynamically -->
+        </div>
+
+        <div class="folder-modal-nav">
+            <button type="button" id="btn-folder-up" class="folder-nav-btn" title="Go up one folder">⬆ Up</button>
+            <div class="folder-breadcrumbs" id="folder-breadcrumbs">
+                <!-- Breadcrumbs rendered dynamically -->
+            </div>
+            <button type="button" id="btn-folder-refresh" class="folder-nav-btn" title="Refresh folder list">🔄</button>
+        </div>
+
+        <div class="folder-search-row">
+            <span class="folder-search-icon">🔍</span>
+            <input type="text" id="folder-search-input" placeholder="Filter directories..." autocomplete="off">
+        </div>
+
+        <div class="folder-list-container">
+            <div id="folder-list-loading" class="folder-loading" style="display: none;">
+                <span class="spinner-small"></span> Loading directories...
+            </div>
+            <div id="folder-list" class="folder-list">
+                <!-- Directory items rendered dynamically -->
+            </div>
+        </div>
+
+        <div class="folder-modal-footer">
+            <div class="folder-selected-preview">
+                <span class="preview-label">Selected:</span>
+                <input type="text" id="folder-selected-path" class="folder-path-input" placeholder="No directory selected" spellcheck="false">
+            </div>
+            <div class="folder-modal-actions">
+                <button type="button" id="btn-cancel-folder-modal" class="btn-secondary">Cancel</button>
+                <button type="button" id="btn-confirm-folder-modal" class="btn-primary">✓ Select This Folder</button>
+            </div>
+        </div>
+    </div>
+
     <!-- LangSmith-Style Node Inspector Drawer -->
     <div id="drawer-backdrop" class="drawer-backdrop"></div>
     <aside id="node-inspector-drawer" class="node-drawer">
