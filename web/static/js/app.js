@@ -7,7 +7,9 @@
 document.addEventListener("DOMContentLoaded", () => {
     // DOM Elements
     const btnLaunch = document.getElementById("btn-launch");
-    const btnUseMock = document.getElementById("btn-use-mock");
+    const btnBrowseFolder = document.getElementById("btn-browse-folder");
+    const btnBrowseInline = document.getElementById("btn-browse-inline");
+    const localDirFilePicker = document.getElementById("local-dir-file-picker");
     const btnClearLogs = document.getElementById("btn-clear-logs");
     const btnRefreshSymbols = document.getElementById("btn-refresh-symbols");
 
@@ -278,10 +280,58 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    btnUseMock.addEventListener("click", () => {
-        repoPathInput.value = "calculator_repo";
-        fetchSymbols();
-    });
+    async function handleChooseFolder() {
+        try {
+            const res = await fetch("/api/choose-dir", { method: "POST" });
+            const data = await res.json();
+            if (data.success && data.path) {
+                repoPathInput.value = data.path;
+                fetchSymbols();
+                addTerminalLog("info", `Selected local repository: ${data.path}`);
+                return;
+            } else if (data.cancelled) {
+                return;
+            }
+        } catch (err) {
+            console.warn("Native folder picker unavailable, falling back to browser dialog:", err);
+        }
+
+        // Browser fallback: File System Access API
+        if (window.showDirectoryPicker) {
+            try {
+                const dirHandle = await window.showDirectoryPicker();
+                if (dirHandle && dirHandle.name) {
+                    repoPathInput.value = dirHandle.name;
+                    fetchSymbols();
+                    addTerminalLog("info", `Selected local directory: ${dirHandle.name}`);
+                    return;
+                }
+            } catch (e) {
+                if (e.name !== "AbortError") console.warn(e);
+                return;
+            }
+        }
+
+        // Standard input file directory fallback
+        if (localDirFilePicker) {
+            localDirFilePicker.click();
+        }
+    }
+
+    if (btnBrowseFolder) btnBrowseFolder.addEventListener("click", handleChooseFolder);
+    if (btnBrowseInline) btnBrowseInline.addEventListener("click", handleChooseFolder);
+
+    if (localDirFilePicker) {
+        localDirFilePicker.addEventListener("change", (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const folderName = files[0].webkitRelativePath ? files[0].webkitRelativePath.split("/")[0] : files[0].name;
+                repoPathInput.value = folderName;
+                fetchSymbols();
+                addTerminalLog("info", `Selected folder: ${folderName}`);
+            }
+        });
+    }
 
     // Clear Terminal Logs
     btnClearLogs.addEventListener("click", () => {
@@ -342,7 +392,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. AST Symbol Scanner & Filtering
     // ==========================================
     async function fetchSymbols() {
-        const repo = repoPathInput.value.trim() || "calculator_repo";
+        const repo = repoPathInput.value.trim();
+        if (!repo) {
+            renderSymbols([]);
+            symbolCountPill.textContent = "0";
+            return;
+        }
         try {
             const res = await fetch(`/api/symbols?repo=${encodeURIComponent(repo)}`);
             const data = await res.json();
@@ -554,13 +609,19 @@ document.addEventListener("DOMContentLoaded", () => {
         let githubUrl = null;
         let branch = "main";
         let authToken = null;
-        let localPath = repoPathInput ? repoPathInput.value.trim() : "calculator_repo";
+        let localPath = repoPathInput ? repoPathInput.value.trim() : "";
         let zipBase64 = null;
         let projectName = null;
         let isolateLocal = isolateLocalCheck ? isolateLocalCheck.checked : false;
         let displayTarget = localPath;
 
-        if (activeSourceType === "github") {
+        if (activeSourceType === "local") {
+            if (!localPath) {
+                alert("Please choose or enter a local repository directory.");
+                return;
+            }
+            displayTarget = localPath;
+        } else if (activeSourceType === "github") {
             githubUrl = githubUrlInput ? githubUrlInput.value.trim() : "";
             if (!githubUrl) {
                 alert("Please enter a valid GitHub repository URL.");
@@ -616,7 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     branch: branch,
                     auth_token: authToken,
                     local_path: localPath,
-                    repo_path: localPath || projectName || "calculator_repo",
+                    repo_path: localPath || projectName,
                     zip_base64: zipBase64,
                     project_name: projectName,
                     isolate_local_copy: isolateLocal,

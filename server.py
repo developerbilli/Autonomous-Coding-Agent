@@ -99,8 +99,8 @@ class RunRequest(BaseModel):
     trust_level: Optional[str] = None
 
     # Execution Parameters
-    repo_path: Optional[str] = "calculator_repo"
-    task: str = "Complete Calculator implementation: add division with zero check, power, square root, and factorial"
+    repo_path: Optional[str] = None
+    task: str = "Implement module with input validation, error handling, and pytest unit tests"
     max_iterations: int = 3
     task_type: str = "feature_addition"
     demo_mode: bool = False
@@ -242,14 +242,73 @@ async def get_system_status():
             {"name": "DebuggerAgent", "role": "Stack-trace root cause diagnosis", "icon": "🔄"},
             {"name": "ReviewerAgent", "role": "Adversarial code quality & security audit", "icon": "🛡️"},
         ],
-        "sandbox": ExecutionSandbox(str(BASE_DIR / "calculator_repo")).get_security_status(),
+        "sandbox": ExecutionSandbox(str(BASE_DIR)).get_security_status(),
         "python_version": sys.version.split()[0],
-        "default_repo": str(BASE_DIR / "calculator_repo"),
     }
+
+@app.post("/api/choose-dir")
+async def choose_local_directory():
+    """Opens a native OS folder picker dialog on the host machine and returns the selected path."""
+    import platform
+    system = platform.system()
+    selected_path = None
+
+    try:
+        if system == "Darwin":
+            script = 'POSIX path of (choose folder with prompt "Select Local Repository Directory:")'
+            proc = await asyncio.create_subprocess_exec(
+                "osascript", "-e", script,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode == 0 and stdout:
+                selected_path = stdout.decode("utf-8").strip().rstrip("/")
+        elif system == "Windows":
+            ps_script = (
+                "[System.Reflection.Assembly]::LoadWithPartialName('System.windows.forms') | Out-Null; "
+                "$f = New-Object System.Windows.Forms.FolderBrowserDialog; "
+                "$f.Description = 'Select Local Repository Directory'; "
+                "if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $f.SelectedPath }"
+            )
+            proc = await asyncio.create_subprocess_exec(
+                "powershell", "-NoProfile", "-Command", ps_script,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode == 0 and stdout:
+                selected_path = stdout.decode("utf-8").strip()
+        else:
+            for cmd in [
+                ["zenity", "--file-selection", "--directory", "--title=Select Local Repository Directory"],
+                ["kdialog", "--getexistingdirectory"]
+            ]:
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        *cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE
+                    )
+                    stdout, stderr = await proc.communicate()
+                    if proc.returncode == 0 and stdout:
+                        selected_path = stdout.decode("utf-8").strip()
+                        break
+                except FileNotFoundError:
+                    continue
+    except Exception as e:
+        logger.warning(f"Native folder picker failed: {e}")
+        return {"success": False, "error": str(e)}
+
+    if selected_path:
+        return {"success": True, "path": selected_path}
+    return {"success": False, "cancelled": True}
 
 @app.get("/api/symbols")
 async def get_symbols(repo: Optional[str] = None):
-    target = Path(repo).resolve() if repo else (BASE_DIR / "calculator_repo")
+    if not repo:
+        return {"repo": "", "count": 0, "symbols": []}
+    target = Path(repo).resolve()
     if not target.exists():
         return {"error": f"Path {target} does not exist", "symbols": []}
     
@@ -367,7 +426,7 @@ async def event_stream_generator(req: RunRequest) -> AsyncGenerator[str, None]:
             github_url=req.github_url,
             branch=req.branch or "main",
             auth_token=req.auth_token,
-            local_path=req.local_path or req.repo_path or "calculator_repo",
+            local_path=req.local_path or req.repo_path,
             zip_base64=req.zip_base64,
             project_name=req.project_name,
             isolate_local_copy=req.isolate_local_copy,

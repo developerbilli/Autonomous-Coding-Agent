@@ -74,13 +74,15 @@
                         <!-- Source Pane 1: Local Path -->
                         <div id="source-pane-local" class="source-pane">
                             <div class="input-header-row">
-                                <span class="input-sublabel">Filesystem Path</span>
-                                <button type="button" id="btn-use-mock" class="text-link-btn">Use Calculator Repo</button>
+                                <span class="input-sublabel">Filesystem Directory</span>
+                                <button type="button" id="btn-browse-folder" class="text-link-btn" title="Choose a folder from your computer">📂 Choose Folder...</button>
                             </div>
-                            <div class="input-wrapper">
+                            <div class="input-wrapper input-with-action">
                                 <span class="input-icon">📁</span>
-                                <input type="text" id="repo-path" value="calculator_repo" placeholder="/path/to/repository">
+                                <input type="text" id="repo-path" placeholder="/path/to/project or ./my-repo">
+                                <button type="button" id="btn-browse-inline" class="browse-inline-btn" title="Browse local folders">Browse...</button>
                             </div>
+                            <input type="file" id="local-dir-file-picker" webkitdirectory directory style="display: none;">
                             <div class="checkbox-container sub-checkbox" style="margin-top: 0.35rem;">
                                 <label class="custom-checkbox">
                                     <input type="checkbox" id="isolate-local-check">
@@ -139,15 +141,15 @@
                     <!-- Task Requirement -->
                     <div class="form-group">
                         <label for="task-prompt">Coding Task Requirement</label>
-                        <textarea id="task-prompt" rows="3" placeholder="Describe the software engineering task..." required>Complete Calculator implementation: add division with zero check, power, square root, and factorial</textarea>
+                        <textarea id="task-prompt" rows="3" placeholder="Describe the software engineering task..." required>Implement module functions with input validation, error handling, and pytest unit tests</textarea>
                         
                         <!-- Quick Prompts Chips -->
                         <div class="quick-chips">
                             <span class="chip-label">Presets:</span>
-                            <button type="button" class="preset-chip highlight-chip" data-task="Self-Healing Demo: Fix division by zero and negative square root in Calculator" data-type="bug_fix" data-demo="true">⚡ Self-Healing Demo</button>
-                            <button type="button" class="preset-chip" data-task="Complete Calculator implementation: add division with zero check, power, square root, and factorial" data-type="feature_addition">Complete All</button>
-                            <button type="button" class="preset-chip" data-task="Implement safe division in Calculator with zero division check" data-type="bug_fix">Safe Division</button>
-                            <button type="button" class="preset-chip" data-task="Implement power and square root operations in Calculator" data-type="feature_addition">Power & Root</button>
+                            <button type="button" class="preset-chip highlight-chip" data-task="Self-Healing Demo: Fix edge cases, input validation, and boundary conditions" data-type="bug_fix" data-demo="true">⚡ Self-Healing Demo</button>
+                            <button type="button" class="preset-chip" data-task="Add comprehensive unit tests covering edge cases and error handling" data-type="test_generation">Add Unit Tests</button>
+                            <button type="button" class="preset-chip" data-task="Refactor codebase into clean modular architecture with type hints and docstrings" data-type="refactor">Refactor & Types</button>
+                            <button type="button" class="preset-chip" data-task="Fix bug and add defensive assertions for boundary inputs" data-type="bug_fix">Bug Fix</button>
                         </div>
 
                         <!-- Self-Healing Demo Checkbox -->
