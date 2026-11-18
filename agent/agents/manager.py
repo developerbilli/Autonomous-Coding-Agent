@@ -39,9 +39,11 @@ class ManagerPlannerAgent:
         task: str,
         relevant_files: List[str],
         symbol_names: List[str],
+        guidance: Optional[str] = None,
     ) -> ManagerPlan:
         """Decomposes the high-level task into delegated subtasks for each specialist agent."""
         if self.llm.is_available():
+            memory_section = f"\nRECALLED EPISODIC MEMORIES & PROVEN PATTERNS:\n{guidance}\n" if guidance and "No historical memories" not in guidance else ""
             prompt = f"""You are the Manager and Lead Software Architect coordinating a team of 4 specialized AI agents:
 1. CoderAgent: Writes or updates implementation code and edge-case guards.
 2. TestGeneratorAgent: Writes exhaustive pytest test cases covering edge cases (zero division, negatives, invalid types).
@@ -56,7 +58,7 @@ RELEVANT TARGET FILES:
 
 DISCOVERED AST SYMBOLS:
 {', '.join(symbol_names[:15]) if symbol_names else 'None'}
-
+{memory_section}
 Return a strictly valid JSON object matching this schema:
 {{
   "goal": "Clear summary of the goal",

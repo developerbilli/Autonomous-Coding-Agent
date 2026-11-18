@@ -101,7 +101,12 @@ def manager_planner_node(state: AgentState, config: Optional[RunnableConfig] = N
 
     manager = ManagerPlannerAgent()
     recalled = get_memory_engine().recall_context_for_task(task, state.get("repo_path", ""))
-    plan: ManagerPlan = manager.create_plan(task, relevant_files, symbol_names)
+    plan: ManagerPlan = manager.create_plan(
+        task,
+        relevant_files,
+        symbol_names,
+        guidance=recalled.get("guidance_summary"),
+    )
 
     current_iter = state.get("iteration_count", 0)
     thread_id = resolve_thread_id(state, config)

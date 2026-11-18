@@ -167,6 +167,14 @@ REVIEWER AGENT BLOCKING ISSUES:
 {chr(10).join(['- ' + issue for issue in review_res.blocking_issues])}
 """)
 
+        if state.get("recalled_memories") and state["recalled_memories"].get("guidance_summary"):
+            summary_text = state["recalled_memories"]["guidance_summary"]
+            if "No historical memories" not in summary_text:
+                guidance_blocks.append(f"""
+HISTORICAL EPISODIC REMEDIATIONS & PATTERNS:
+{summary_text}
+""")
+
         ast_context_str = "\n".join([f"- {k}: {v}" for k, v in list(state.get("retrieved_code", {}).items())[:5]])
 
         # Execute LLM code generation if available
