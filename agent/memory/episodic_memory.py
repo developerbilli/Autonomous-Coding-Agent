@@ -234,7 +234,8 @@ class EpisodicMemoryStore:
 
     def recall_anti_patterns(self, query: MemoryQuery) -> List[Episode]:
         """Recalls relevant failed strategies and anti-patterns to warn the agent against repeating them."""
-        sql = "SELECT * FROM episodes WHERE (is_anti_pattern = 1 OR test_passed = 0) ORDER BY timestamp DESC LIMIT 25;"
+        status_filter = "" if query.include_superseded else "AND status != 'invalidated'"
+        sql = f"SELECT * FROM episodes WHERE (is_anti_pattern = 1 OR test_passed = 0) {status_filter} ORDER BY timestamp DESC LIMIT 25;"
         with self._get_connection() as conn:
             rows = conn.execute(sql).fetchall()
 
