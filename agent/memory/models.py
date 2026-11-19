@@ -58,7 +58,10 @@ class Episode(BaseModel):
     test_passed: bool = True
     review_score: float = 1.0
     outcome: str = "success"  # success, failed, aborted
-    status: str = "active"  # active, superseded, invalidated, deprecated
+    status: str = "active"  # active, superseded, invalidated, deprecated, quarantined
+    security_status: str = "verified"  # verified, quarantined, invalidated
+    revocation_reason: Optional[str] = None
+    security_violations: List[Dict[str, Any]] = Field(default_factory=list)
     scope: str = "repository"  # repository, framework, global
     superseded_by: Optional[str] = None
     is_anti_pattern: bool = False  # True if capturing a failed strategy to prevent repetition
@@ -78,7 +81,7 @@ class SemanticPattern(BaseModel):
     title: str = ""  # Pattern title (synchronized with pattern)
     content: str = ""
     tags: List[str] = Field(default_factory=list)
-    confidence: float = 0.70  # Bayesian-inspired confidence score (Beta posterior mean with effective sample weighting)
+    confidence: float = 0.70  # Dimension 1: Outcome-based Bayesian reliability (Beta posterior mean)
     successful_reuses: int = 0  # Count of downstream workflows where pattern was reused and passed
     failed_reuses: int = 0  # Count of downstream workflows where pattern resulted in regression
     language: str = "python"  # python, typescript, polyglot
@@ -87,7 +90,11 @@ class SemanticPattern(BaseModel):
     constraints: Dict[str, Any] = Field(default_factory=dict)  # environment / version constraints
     validation_evidence: List[Union[str, Dict[str, Any]]] = Field(default_factory=list)  # Empirical receipts
     last_verified: Optional[str] = None  # Timestamp of latest verification
-    status: str = "active"  # active, deprecated, invalidated
+    status: str = "active"  # active, deprecated, invalidated, quarantined
+    security_status: str = "verified"  # Dimension 2: Security validity (verified, quarantined, invalidated)
+    revocation_reason: Optional[str] = None  # Explanation if revoked/quarantined for security
+    security_violations: List[Dict[str, Any]] = Field(default_factory=list)  # Audit trail of security events
+    revoked_at: Optional[str] = None
     scope: str = "global"  # global, ecosystem, repository
     origin_episodes: List[str] = Field(default_factory=list)  # Episode IDs whose validation promoted this
     origin_repos: List[str] = Field(default_factory=list)  # Repository IDs where pattern was validated
@@ -162,6 +169,8 @@ class UntrustedMemoryItem(BaseModel):
     origin_thread: Optional[str] = None
     receipt_ids: List[str] = Field(default_factory=list)
     trust_tier: str = "UNTRUSTED_REFERENCE"  # Invariant: Never elevated to trusted/system
+    security_status: str = "verified"  # verified, quarantined, invalidated
+    revocation_reason: Optional[str] = None
     confidence: float = 0.50
     scope: str = "repository"  # repository, ecosystem, global
     content_fields: Dict[str, Any] = Field(default_factory=dict)
@@ -178,6 +187,8 @@ class UntrustedMemoryItem(BaseModel):
         receipt_ids: Optional[List[str]] = None,
         confidence: float = 0.50,
         scope: str = "repository",
+        security_status: str = "verified",
+        revocation_reason: Optional[str] = None,
     ) -> "UntrustedMemoryItem":
         receipts = receipt_ids or []
         raw_key = f"{item_id}:{item_type}:{source_repo}:{origin_thread or ''}:{':'.join(sorted(receipts))}"
@@ -189,6 +200,8 @@ class UntrustedMemoryItem(BaseModel):
             origin_thread=origin_thread,
             receipt_ids=receipts,
             trust_tier="UNTRUSTED_REFERENCE",
+            security_status=security_status,
+            revocation_reason=revocation_reason,
             confidence=confidence,
             scope=scope,
             content_fields=content_fields,

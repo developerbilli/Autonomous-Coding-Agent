@@ -45,6 +45,9 @@ class EpisodicMemoryStore:
                     review_score REAL NOT NULL,
                     outcome TEXT NOT NULL,
                     status TEXT NOT NULL DEFAULT 'active',
+                    security_status TEXT NOT NULL DEFAULT 'verified',
+                    revocation_reason TEXT DEFAULT NULL,
+                    security_violations TEXT NOT NULL DEFAULT '[]',
                     scope TEXT NOT NULL DEFAULT 'repository',
                     superseded_by TEXT,
                     is_anti_pattern INTEGER NOT NULL DEFAULT 0,
@@ -58,6 +61,9 @@ class EpisodicMemoryStore:
             existing_cols = {row["name"] for row in conn.execute("PRAGMA table_info(episodes);").fetchall()}
             for col, col_type, default_val in [
                 ("status", "TEXT NOT NULL", "'active'"),
+                ("security_status", "TEXT NOT NULL", "'verified'"),
+                ("revocation_reason", "TEXT", "NULL"),
+                ("security_violations", "TEXT NOT NULL", "'[]'"),
                 ("scope", "TEXT NOT NULL", "'repository'"),
                 ("superseded_by", "TEXT", "NULL"),
                 ("is_anti_pattern", "INTEGER NOT NULL", "0"),
@@ -106,10 +112,11 @@ class EpisodicMemoryStore:
                     episode_id, timestamp, thread_id, repo_identifier,
                     task_description, task_type, error_signatures,
                     remediation_strategy, files_modified, test_passed,
-                    review_score, outcome, status, scope, superseded_by,
-                    is_anti_pattern, failure_reason, validation_count,
+                    review_score, outcome, status,
+                    security_status, revocation_reason, security_violations,
+                    scope, superseded_by, is_anti_pattern, failure_reason, validation_count,
                     promoted_to_pattern_id, metadata
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """,
                 (
                     episode.episode_id,
@@ -125,6 +132,9 @@ class EpisodicMemoryStore:
                     episode.review_score,
                     episode.outcome,
                     episode.status,
+                    episode.security_status,
+                    episode.revocation_reason,
+                    json.dumps(episode.security_violations),
                     episode.scope,
                     episode.superseded_by,
                     1 if (episode.is_anti_pattern or not episode.test_passed) else 0,
@@ -156,6 +166,33 @@ class EpisodicMemoryStore:
             conn.commit()
         return count
 
+    def invalidate_episode_for_security_violation(
+        self,
+        episode_id: str,
+        violation_type: str,
+        details: str,
+        revoked_by: str = "security_policy",
+    ) -> bool:
+        """Immediately revokes trust and invalidates an episode due to a security violation."""
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM episodes WHERE episode_id = ?;", (episode_id,)).fetchone()
+            if not row:
+                return False
+            reason = f"Security Violation ({violation_type}): {details}"
+            conn.execute(
+                """
+                UPDATE episodes
+                SET status = 'invalidated',
+                    security_status = 'quarantined',
+                    failure_reason = ?,
+                    revocation_reason = ?
+                WHERE episode_id = ?;
+                """,
+                (reason, reason, episode_id),
+            )
+            conn.commit()
+            return True
+
     def _row_to_episode(self, row: sqlite3.Row) -> Episode:
         return Episode(
             episode_id=row["episode_id"],
@@ -171,6 +208,9 @@ class EpisodicMemoryStore:
             review_score=float(row["review_score"]),
             outcome=row["outcome"],
             status=row["status"] if "status" in row.keys() else "active",
+            security_status=row["security_status"] if "security_status" in row.keys() else "verified",
+            revocation_reason=row["revocation_reason"] if "revocation_reason" in row.keys() else None,
+            security_violations=json.loads(row["security_violations"]) if ("security_violations" in row.keys() and row["security_violations"]) else [],
             scope=row["scope"] if "scope" in row.keys() else "repository",
             superseded_by=row["superseded_by"] if "superseded_by" in row.keys() else None,
             is_anti_pattern=bool(row["is_anti_pattern"]) if "is_anti_pattern" in row.keys() else False,
@@ -182,7 +222,7 @@ class EpisodicMemoryStore:
 
     def recall_episodes(self, query: MemoryQuery) -> List[Episode]:
         """Recalls the most relevant past active episodes respecting repository scoping and retention status."""
-        status_filter = "" if query.include_superseded else "AND status = 'active'"
+        status_filter = "" if query.include_superseded else "AND status = 'active' AND (security_status IS NULL OR security_status = 'verified')"
         sql = f"SELECT * FROM episodes WHERE test_passed = 1 {status_filter} ORDER BY timestamp DESC LIMIT 50;"
 
         with self._get_connection() as conn:
@@ -198,6 +238,10 @@ class EpisodicMemoryStore:
 
         for row in rows:
             ep = self._row_to_episode(row)
+
+            # Security validity gate: Exclude any episode with security revocation
+            if ep.security_status != "verified" or ep.status in ("invalidated", "quarantined"):
+                continue
 
             # Strict Repository Scoping:
             # Repository-specific facts (scope == 'repository') MUST NOT leak into other repositories!

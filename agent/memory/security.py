@@ -160,6 +160,20 @@ class MemorySecurityBoundary:
         for ep in episodes[: self.max_items_per_category]:
             audit.total_inspected += 1
 
+            # Security Validity Check (Dimension 2: Independent of outcome score)
+            if getattr(ep, "security_status", "verified") != "verified" or ep.status in ("invalidated", "quarantined"):
+                audit.violations.append(
+                    SecurityViolation(
+                        item_id=ep.episode_id,
+                        item_type="episode",
+                        violation_type="security_revocation",
+                        details=f"Episode revoked for security: {getattr(ep, 'revocation_reason', 'Security violation')}",
+                        action_taken="quarantined",
+                    )
+                )
+                audit.total_quarantined += 1
+                continue
+
             # Scope boundary verification
             if ep.scope == "repository" and target_repo and target_repo not in ep.repo_identifier:
                 audit.violations.append(
@@ -243,6 +257,21 @@ class MemorySecurityBoundary:
         for pat in patterns[: self.max_items_per_category]:
             audit.total_inspected += 1
 
+            # Security Validity Gate (Dimension 2: Integrity & Security Compliance)
+            # Immediate quarantine regardless of Bayesian confidence score (even if confidence is 0.99)
+            if getattr(pat, "security_status", "verified") != "verified" or pat.status in ("invalidated", "quarantined"):
+                audit.violations.append(
+                    SecurityViolation(
+                        item_id=pat.pattern_id,
+                        item_type="pattern",
+                        violation_type="security_revocation",
+                        details=f"Pattern revoked/quarantined for security: {getattr(pat, 'revocation_reason', 'Security violation')}",
+                        action_taken="quarantined",
+                    )
+                )
+                audit.total_quarantined += 1
+                continue
+
             # Confidence floor verification
             if pat.confidence < self.min_confidence_threshold or pat.status != "active":
                 audit.violations.append(
@@ -311,6 +340,8 @@ class MemorySecurityBoundary:
                     receipt_ids=[],
                     confidence=ep_dict.get("review_score", 0.7),
                     scope=ep_dict.get("scope", "repository"),
+                    security_status=getattr(orig_ep, "security_status", "verified") if orig_ep else "verified",
+                    revocation_reason=getattr(orig_ep, "revocation_reason", None) if orig_ep else None,
                     content_fields={
                         "task_description": ep_dict["task_description"],
                         "remediation_strategy": ep_dict.get("remediation_strategy", ""),
@@ -331,6 +362,8 @@ class MemorySecurityBoundary:
                     receipt_ids=[],
                     confidence=0.0,
                     scope=ap_dict.get("scope", "repository"),
+                    security_status=getattr(orig_ap, "security_status", "verified") if orig_ap else "verified",
+                    revocation_reason=getattr(orig_ap, "revocation_reason", None) if orig_ap else None,
                     content_fields={
                         "failure_reason": ap_dict["failure_reason"],
                     },
@@ -349,6 +382,8 @@ class MemorySecurityBoundary:
                     receipt_ids=receipt_ids,
                     confidence=pat_dict["confidence"],
                     scope=pat_dict["scope"],
+                    security_status=getattr(orig_pat, "security_status", "verified") if orig_pat else "verified",
+                    revocation_reason=getattr(orig_pat, "revocation_reason", None) if orig_pat else None,
                     content_fields={
                         "title": pat_dict["title"],
                         "topic": pat_dict["topic"],

@@ -5,12 +5,15 @@ testing templates, and conventions across projects and repositories.
 """
 
 import json
+import logging
 import sqlite3
 import time
 from pathlib import Path
 from typing import List, Optional, Set, Dict, Any, Union
 
 from agent.memory.models import SemanticPattern, ValidationReceipt
+
+logger = logging.getLogger("agent.memory.semantic_memory")
 
 
 class SemanticMemoryStore:
@@ -50,6 +53,10 @@ class SemanticMemoryStore:
                     validation_evidence TEXT NOT NULL DEFAULT '[]',
                     last_verified TEXT,
                     status TEXT NOT NULL DEFAULT 'active',
+                    security_status TEXT NOT NULL DEFAULT 'verified',
+                    revocation_reason TEXT DEFAULT NULL,
+                    security_violations TEXT NOT NULL DEFAULT '[]',
+                    revoked_at TEXT DEFAULT NULL,
                     scope TEXT NOT NULL DEFAULT 'global',
                     origin_episodes TEXT NOT NULL DEFAULT '[]',
                     origin_repos TEXT NOT NULL DEFAULT '[]',
@@ -70,6 +77,10 @@ class SemanticMemoryStore:
                 ("validation_evidence", "TEXT NOT NULL", "'[]'"),
                 ("last_verified", "TEXT", "NULL"),
                 ("status", "TEXT NOT NULL", "'active'"),
+                ("security_status", "TEXT NOT NULL", "'verified'"),
+                ("revocation_reason", "TEXT", "NULL"),
+                ("security_violations", "TEXT NOT NULL", "'[]'"),
+                ("revoked_at", "TEXT", "NULL"),
                 ("scope", "TEXT NOT NULL", "'global'"),
                 ("origin_episodes", "TEXT NOT NULL", "'[]'"),
                 ("origin_repos", "TEXT NOT NULL", "'[]'"),
@@ -99,9 +110,10 @@ class SemanticMemoryStore:
                     topic, title, content, tags, confidence,
                     successful_reuses, failed_reuses, language,
                     framework, ecosystem, constraints,
-                    validation_evidence, last_verified, status, scope,
-                    origin_episodes, origin_repos, validation_count, last_validated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    validation_evidence, last_verified, status,
+                    security_status, revocation_reason, security_violations, revoked_at,
+                    scope, origin_episodes, origin_repos, validation_count, last_validated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """,
                 (
                     pattern.pattern_id,
@@ -122,6 +134,10 @@ class SemanticMemoryStore:
                     json.dumps(pattern.validation_evidence),
                     pattern.last_verified,
                     pattern.status,
+                    pattern.security_status,
+                    pattern.revocation_reason,
+                    json.dumps(pattern.security_violations),
+                    pattern.revoked_at,
                     pattern.scope,
                     json.dumps(pattern.origin_episodes),
                     json.dumps(pattern.origin_repos),
@@ -149,6 +165,17 @@ class SemanticMemoryStore:
                 return None
 
             pat = self._row_to_pattern(row)
+
+            # ----------------------------------------------------
+            # Security Validity Gate (Dimension 2):
+            # A pattern quarantined or invalidated for security CANNOT record positive reuses or gain confidence!
+            # ----------------------------------------------------
+            if pat.security_status != "verified" or pat.status in ("invalidated", "quarantined"):
+                logger.warning(
+                    f"Pattern {pattern_id} is {pat.security_status}/{pat.status} (revoked for security). "
+                    "Skipping reuse recording and confidence calculation."
+                )
+                return pat
 
             # Build or extract structured ValidationReceipt
             if isinstance(evidence, ValidationReceipt):
@@ -354,12 +381,56 @@ class SemanticMemoryStore:
             validation_evidence=json.loads(row["validation_evidence"]) if "validation_evidence" in keys else [],
             last_verified=row["last_verified"] if "last_verified" in keys else None,
             status=row["status"] if "status" in keys else "active",
+            security_status=row["security_status"] if "security_status" in keys else "verified",
+            revocation_reason=row["revocation_reason"] if "revocation_reason" in keys else None,
+            security_violations=json.loads(row["security_violations"]) if ("security_violations" in keys and row["security_violations"]) else [],
+            revoked_at=row["revoked_at"] if "revoked_at" in keys else None,
             scope=row["scope"] if "scope" in keys else "global",
             origin_episodes=json.loads(row["origin_episodes"]) if "origin_episodes" in keys else [],
             origin_repos=json.loads(row["origin_repos"]) if ("origin_repos" in keys and row["origin_repos"]) else [],
             validation_count=int(row["validation_count"]) if "validation_count" in keys else 1,
             last_validated_at=row["last_validated_at"] if "last_validated_at" in keys else None,
         )
+
+    def invalidate_for_security_violation(
+        self,
+        pattern_id: str,
+        violation_type: str,
+        details: str,
+        revoked_by: str = "security_policy",
+        quarantine: bool = True,
+    ) -> Optional[SemanticPattern]:
+        """Immediately revokes trust from a semantic pattern due to a security violation.
+        
+        This is an instantaneous, non-probabilistic security intervention that bypasses Bayesian
+        confidence thresholds entirely. A pattern with confidence=0.99 is immediately invalidated
+        or quarantined and excluded from all future retrieval.
+        """
+        now_str = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM semantic_patterns WHERE pattern_id = ?;", (pattern_id,)).fetchone()
+            if not row:
+                return None
+            pat = self._row_to_pattern(row)
+            pat.security_status = "quarantined" if quarantine else "invalidated"
+            pat.status = "invalidated"
+            pat.revocation_reason = f"Security Violation ({violation_type}): {details}"
+            pat.revoked_at = now_str
+            violation_record = {
+                "violation_type": violation_type,
+                "details": details,
+                "revoked_by": revoked_by,
+                "timestamp": now_str,
+                "prior_confidence": pat.confidence,
+                "action": "quarantined" if quarantine else "invalidated",
+            }
+            pat.security_violations.append(violation_record)
+            self.store_pattern(pat)
+            logger.warning(
+                f"Pattern {pattern_id} ({pat.title}) IMMEDIATELY INVALIDATED for security violation: {details} "
+                f"(Prior Bayesian confidence: {pat.confidence})"
+            )
+            return pat
 
     def recall_patterns(
         self,
@@ -372,7 +443,9 @@ class SemanticMemoryStore:
     ) -> List[SemanticPattern]:
         """Recalls relevant patterns ranked by relevance, empirical confidence, and reuse evidence."""
         with self._get_connection() as conn:
-            rows = conn.execute("SELECT * FROM semantic_patterns WHERE status = 'active';").fetchall()
+            rows = conn.execute(
+                "SELECT * FROM semantic_patterns WHERE status = 'active' AND (security_status IS NULL OR security_status = 'verified');"
+            ).fetchall()
 
         if not rows:
             return []
@@ -382,6 +455,10 @@ class SemanticMemoryStore:
 
         for row in rows:
             pat = self._row_to_pattern(row)
+
+            # Security validity gate: strictly exclude any pattern with security issues regardless of confidence
+            if pat.security_status != "verified" or pat.status in ("invalidated", "quarantined"):
+                continue
 
             # ----------------------------------------------------
             # Strict Scope & Compatibility Gating

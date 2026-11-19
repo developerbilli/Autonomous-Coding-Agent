@@ -243,6 +243,80 @@ class MemoryEngine:
         )
         return pattern
 
+    def invalidate_memory_for_security_violation(
+        self,
+        pattern_id: Optional[str] = None,
+        episode_id: Optional[str] = None,
+        violation_type: str = "security_policy_violation",
+        details: str = "",
+        revoked_by: str = "security_boundary",
+        register_as_anti_pattern: bool = True,
+    ) -> Dict[str, Any]:
+        """Immediately revokes trust from a memory item (pattern and/or episode) due to a security violation.
+        
+        Decouples Outcome-Based Reliability from Security-Based Validity:
+        Regardless of Bayesian confidence score (even if confidence is 0.99), the pattern is
+        immediately quarantined and excluded from future retrieval.
+        Optionally registers an explicit Security Anti-Pattern so future workflows are warned.
+        """
+        results: Dict[str, Any] = {"pattern_invalidated": False, "episode_invalidated": False}
+        revocation_desc = f"Security Violation ({violation_type}): {details}"
+
+        # 1. Invalidate Semantic Pattern if specified
+        if pattern_id:
+            pat = self.semantic_store.invalidate_for_security_violation(
+                pattern_id=pattern_id,
+                violation_type=violation_type,
+                details=details,
+                revoked_by=revoked_by,
+                quarantine=True,
+            )
+            if pat:
+                results["pattern_invalidated"] = True
+                results["prior_confidence"] = pat.confidence
+
+                # 2. Register explicit Security Anti-Pattern in episodic memory
+                if register_as_anti_pattern:
+                    anti_pattern_id = f"sec_ap_{pattern_id}_{int(time.time() * 1000)}"
+                    anti_ep = Episode(
+                        episode_id=anti_pattern_id,
+                        timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                        thread_id="security_quarantine",
+                        repo_identifier=pat.repo_identifier,
+                        task_description=f"Security warning for pattern '{pat.title}': {details}",
+                        task_type="bug_fix",
+                        error_signatures=[f"SEC_VIOLATION:{violation_type}"],
+                        remediation_strategy=None,
+                        files_modified=[],
+                        test_passed=False,
+                        review_score=0.0,
+                        outcome="failed",
+                        status="active",
+                        security_status="verified",
+                        scope=pat.scope,
+                        is_anti_pattern=True,
+                        failure_reason=revocation_desc,
+                        metadata={
+                            "quarantined_pattern_id": pattern_id,
+                            "violation_type": violation_type,
+                            "revoked_by": revoked_by,
+                        },
+                    )
+                    self.episodic_store.record_episode(anti_ep)
+                    results["anti_pattern_registered"] = anti_pattern_id
+
+        # 3. Invalidate Episode if specified
+        if episode_id:
+            ep_ok = self.episodic_store.invalidate_episode_for_security_violation(
+                episode_id=episode_id,
+                violation_type=violation_type,
+                details=details,
+                revoked_by=revoked_by,
+            )
+            results["episode_invalidated"] = ep_ok
+
+        return results
+
 
 _GLOBAL_MEMORY_ENGINE: Optional[MemoryEngine] = None
 
