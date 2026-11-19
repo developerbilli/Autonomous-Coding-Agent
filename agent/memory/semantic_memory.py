@@ -204,20 +204,30 @@ class SemanticMemoryStore:
             # Update validation_count to reflect truly independent validation events
             pat.validation_count = max(1, len(passed_receipts))
 
-            # Bayesian posterior confidence calculation:
-            alpha = 3.0 + pat.successful_reuses
-            beta = 1.0 + (pat.failed_reuses * 2.5)
-            base_confidence = alpha / (alpha + beta)
+            # ----------------------------------------------------
+            # Bayesian-Inspired Confidence Calculation:
+            # Modeled as the posterior mean of a fractional-weight Beta distribution Beta(alpha, beta).
+            # Orthogonal evidence dimensions (distinct runs, test suites, environments, repos)
+            # scale the effective sample size parameter (alpha), while regressions add an asymmetric
+            # penalty to (beta). This keeps the score mathematically bounded in (0, 1) without
+            # arbitrary additive scalar bonuses or post-hoc clamping.
+            # ----------------------------------------------------
+            alpha_0 = 3.0  # Calibrated prior success pseudo-counts
+            beta_0 = 1.0   # Calibrated prior failure pseudo-counts
 
-            # Empirical Evidence Depth: scaled by orthogonal independence dimensions
-            independence_depth = (
-                min(distinct_runs, 3) +
-                min(max(0, distinct_suites - 1), 2) +
-                min(max(0, distinct_envs - 1), 1) +
-                min(max(0, distinct_repos - 1), 2)
+            # Effective sample size: orthogonal evidence vectors scale the statistical weight
+            effective_success_weight = (
+                pat.successful_reuses
+                + 0.5 * min(max(0, distinct_runs - 1), 2)
+                + 0.5 * min(max(0, distinct_suites - 1), 2)
+                + 0.5 * min(max(0, distinct_envs - 1), 1)
+                + 0.5 * min(max(0, distinct_repos - 1), 2)
             )
-            evidence_bonus = 0.035 * min(independence_depth, 6)
-            pat.confidence = round(min(0.99, max(0.10, base_confidence + evidence_bonus)), 2)
+            alpha = alpha_0 + effective_success_weight
+            beta = beta_0 + (pat.failed_reuses * 2.5)  # Asymmetric penalty for regressions
+
+            # Posterior mean E[theta | D] = alpha / (alpha + beta)
+            pat.confidence = round(alpha / (alpha + beta), 2)
 
             # Auto-deprecation if repeatedly failing
             if pat.failed_reuses >= 3 and pat.confidence < 0.45:

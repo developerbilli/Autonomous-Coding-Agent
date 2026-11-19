@@ -78,7 +78,7 @@ class SemanticPattern(BaseModel):
     title: str = ""  # Pattern title (synchronized with pattern)
     content: str = ""
     tags: List[str] = Field(default_factory=list)
-    confidence: float = 0.70  # Empirical confidence score dynamically adjusted via reuses
+    confidence: float = 0.70  # Bayesian-inspired confidence score (Beta posterior mean with effective sample weighting)
     successful_reuses: int = 0  # Count of downstream workflows where pattern was reused and passed
     failed_reuses: int = 0  # Count of downstream workflows where pattern resulted in regression
     language: str = "python"  # python, typescript, polyglot
