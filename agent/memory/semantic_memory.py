@@ -8,9 +8,9 @@ import json
 import sqlite3
 import time
 from pathlib import Path
-from typing import List, Optional, Set, Dict, Any
+from typing import List, Optional, Set, Dict, Any, Union
 
-from agent.memory.models import SemanticPattern
+from agent.memory.models import SemanticPattern, ValidationReceipt
 
 
 class SemanticMemoryStore:
@@ -135,62 +135,111 @@ class SemanticMemoryStore:
         self,
         pattern_id: str,
         success: bool,
-        evidence: Optional[str] = None,
+        evidence: Optional[Union[str, ValidationReceipt, Dict[str, Any]]] = None,
         repo_identifier: Optional[str] = None,
+        run_id: Optional[str] = None,
+        test_suite_id: Optional[str] = None,
+        environment: Optional[str] = None,
+        score: float = 1.0,
     ) -> Optional[SemanticPattern]:
-        """Records downstream reuse outcome, updating empirical confidence and validation evidence."""
+        """Records downstream reuse outcome, updating empirical confidence with independent validation deduplication."""
         with self._get_connection() as conn:
             row = conn.execute("SELECT * FROM semantic_patterns WHERE pattern_id = ?;", (pattern_id,)).fetchone()
             if not row:
                 return None
 
             pat = self._row_to_pattern(row)
+
+            # Build or extract structured ValidationReceipt
+            if isinstance(evidence, ValidationReceipt):
+                receipt = evidence
+            elif isinstance(evidence, dict) and "receipt_id" in evidence:
+                receipt = ValidationReceipt(**evidence)
+            else:
+                # Fallback / explicit metadata receipt constructor
+                r_id = run_id or f"run_{repo_identifier or 'default'}_{int(time.time() * 1000)}"
+                repo_id = repo_identifier or "global"
+                suite_id = test_suite_id or (str(evidence) if (evidence and not str(evidence).startswith("FAILED:")) else "default_test_suite")
+                env_id = environment or "posix-sandbox"
+                receipt = ValidationReceipt.create(
+                    run_id=r_id,
+                    repo_identifier=repo_id,
+                    test_suite_id=suite_id,
+                    environment=env_id,
+                    outcome="passed" if success else "failed",
+                    score=score,
+                )
+
+            # ----------------------------------------------------
+            # Independence & Deduplication Gate:
+            # Running the exact same test in the same run/env does NOT constitute new independent evidence!
+            # ----------------------------------------------------
+            existing_receipts = pat.parse_receipts()
+            existing_receipt_ids = {r.receipt_id for r in existing_receipts}
+            if receipt.receipt_id in existing_receipt_ids:
+                # Redundant verification detected - do not count twice
+                return pat
+
+            # Append structured receipt to validation evidence
+            pat.validation_evidence.append(receipt.model_dump())
+
             if success:
                 pat.successful_reuses += 1
-                if evidence and evidence not in pat.validation_evidence:
-                    pat.validation_evidence.append(evidence)
-
-                # Record origin repo for cross-repository validation tracking
                 if repo_identifier and repo_identifier not in pat.origin_repos:
                     pat.origin_repos.append(repo_identifier)
-
-                # Cross-Repository Validation Gate:
-                # If verified in at least 2 distinct repositories with high confidence and no failures,
-                # elevate scope appropriately.
-                distinct_repos = set(pat.origin_repos)
-                if len(distinct_repos) >= 2 and pat.successful_reuses >= 2 and pat.failed_reuses == 0 and pat.confidence >= 0.85:
-                    if not pat.ecosystem and not pat.framework and pat.scope != "global":
-                        pat.scope = "global"
-                        pat.repo_identifier = "global"
-                        receipt = f"promoted_to_global:cross_repo_verified:{len(distinct_repos)}_repos"
-                        if receipt not in pat.validation_evidence:
-                            pat.validation_evidence.append(receipt)
-                    elif pat.scope == "repository" and (pat.ecosystem or pat.framework):
-                        pat.scope = "ecosystem"
-                        receipt = f"promoted_to_ecosystem:cross_repo_verified:{len(distinct_repos)}_repos"
-                        if receipt not in pat.validation_evidence:
-                            pat.validation_evidence.append(receipt)
             else:
                 pat.failed_reuses += 1
-                if evidence:
-                    pat.validation_evidence.append(f"FAILED:{evidence}")
+
+            # ----------------------------------------------------
+            # Multi-Dimensional Independence Calculation:
+            # Genuinely orthogonal validation requires distinct runs, test suites, and environments.
+            # ----------------------------------------------------
+            all_receipts = pat.parse_receipts()
+            passed_receipts = [r for r in all_receipts if r.outcome == "passed"]
+            distinct_runs = len({r.run_id for r in passed_receipts})
+            distinct_suites = len({r.test_suite_id for r in passed_receipts})
+            distinct_envs = len({r.environment for r in passed_receipts})
+            distinct_repos = len(set(pat.origin_repos))
+
+            # Update validation_count to reflect truly independent validation events
+            pat.validation_count = max(1, len(passed_receipts))
 
             # Bayesian posterior confidence calculation:
-            # Prior: Alpha=3.0, Beta=1.0 (calibrated baseline prior = 0.75 for candidate patterns)
-            # Reuses update distribution: successes increment alpha; failures heavily penalize beta.
             alpha = 3.0 + pat.successful_reuses
             beta = 1.0 + (pat.failed_reuses * 2.5)
             base_confidence = alpha / (alpha + beta)
 
-            # Empirical Evidence Depth factor: verified receipts (unit_tests_passed, regression_test_passed)
-            # boost confidence towards asymptote 0.99.
-            valid_evidence_count = len([e for e in pat.validation_evidence if not str(e).startswith("FAILED:")])
-            evidence_bonus = 0.0375 * min(valid_evidence_count, 4)
+            # Empirical Evidence Depth: scaled by orthogonal independence dimensions
+            independence_depth = (
+                min(distinct_runs, 3) +
+                min(max(0, distinct_suites - 1), 2) +
+                min(max(0, distinct_envs - 1), 1) +
+                min(max(0, distinct_repos - 1), 2)
+            )
+            evidence_bonus = 0.035 * min(independence_depth, 6)
             pat.confidence = round(min(0.99, max(0.10, base_confidence + evidence_bonus)), 2)
 
             # Auto-deprecation if repeatedly failing
             if pat.failed_reuses >= 3 and pat.confidence < 0.45:
                 pat.status = "deprecated"
+
+            # ----------------------------------------------------
+            # Cross-Repository & Multi-Run Gate for Global Promotion:
+            # Requires AT LEAST 2 distinct repositories AND AT LEAST 2 independent execution runs!
+            # ----------------------------------------------------
+            if (distinct_repos >= 2 and distinct_runs >= 2
+                and pat.failed_reuses == 0 and pat.confidence >= 0.85):
+                if not pat.ecosystem and not pat.framework and pat.scope != "global":
+                    pat.scope = "global"
+                    pat.repo_identifier = "global"
+                    receipt_str = f"promoted_to_global:cross_repo_verified:{distinct_repos}_repos:{distinct_runs}_runs"
+                    if receipt_str not in pat.validation_evidence:
+                        pat.validation_evidence.append(receipt_str)
+                elif pat.scope == "repository" and (pat.ecosystem or pat.framework):
+                    pat.scope = "ecosystem"
+                    receipt_str = f"promoted_to_ecosystem:cross_repo_verified:{distinct_repos}_repos:{distinct_runs}_runs"
+                    if receipt_str not in pat.validation_evidence:
+                        pat.validation_evidence.append(receipt_str)
 
             pat.last_verified = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             pat.last_validated_at = pat.last_verified
@@ -233,6 +282,19 @@ class SemanticMemoryStore:
             effective_scope = "ecosystem"
 
         repos = origin_repos or ([repo_identifier] if repo_identifier else [])
+        origin_repo_id = repo_identifier or (repos[0] if repos else "origin_repo")
+        initial_receipt = ValidationReceipt.create(
+            run_id=f"run_origin_{episode_id}",
+            repo_identifier=origin_repo_id,
+            test_suite_id=f"suite_origin_{topic}",
+            environment="posix-sandbox",
+            outcome="passed",
+            score=1.0,
+            timestamp=now_str,
+        )
+        evidence_list = list(evidence)
+        evidence_list.append(initial_receipt.model_dump())
+
         pattern = SemanticPattern(
             pattern_id=pattern_id,
             pattern=title,
@@ -249,7 +311,7 @@ class SemanticMemoryStore:
             framework=framework,
             ecosystem=ecosystem,
             constraints=constraints or {},
-            validation_evidence=evidence,
+            validation_evidence=evidence_list,
             last_verified=now_str,
             status="active",
             scope=effective_scope,

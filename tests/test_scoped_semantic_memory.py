@@ -229,3 +229,114 @@ def test_technology_specific_pattern_promotes_to_ecosystem_not_global(temp_memor
         ecosystem="mongodb",
     )
     assert not any(p.pattern_id == pat.pattern_id for p in mongo_search)
+
+
+def test_duplicate_validation_runs_do_not_inflate_confidence(temp_memory_engine):
+    """Verify that calling record_reuse with the same run_id, suite, and environment is deduplicated."""
+    engine = temp_memory_engine
+
+    pattern = SemanticPattern(
+        pattern_id="pat_dedup_test",
+        pattern_type="convention",
+        repo_identifier="my_project",
+        topic="deduplication",
+        title="Deduplication Guard Test",
+        content="Testing duplicate verification prevention.",
+        tags=["test", "dedup"],
+        confidence=0.75,
+        scope="repository",
+    )
+    engine.semantic_store.store_pattern(pattern)
+
+    # First validation run
+    res1 = engine.semantic_store.record_reuse(
+        pattern_id="pat_dedup_test",
+        success=True,
+        repo_identifier="my_project",
+        run_id="thread_101",
+        test_suite_id="test_suite_unit_calc.py",
+        environment="posix-sandbox",
+    )
+    assert res1.successful_reuses == 1
+    assert res1.validation_count == 1
+    initial_conf = res1.confidence
+
+    # Attempt to validate 4 more times with identical run_id, suite, and environment
+    for _ in range(4):
+        res_dup = engine.semantic_store.record_reuse(
+            pattern_id="pat_dedup_test",
+            success=True,
+            repo_identifier="my_project",
+            run_id="thread_101",
+            test_suite_id="test_suite_unit_calc.py",
+            environment="posix-sandbox",
+        )
+        # Redundant calls must NOT increase successful_reuses or validation_count!
+        assert res_dup.successful_reuses == 1
+        assert res_dup.validation_count == 1
+        assert res_dup.confidence == initial_conf
+
+
+def test_independent_validation_dimensions_runs_suites_environments(temp_memory_engine):
+    """Verify that distinct runs, distinct test suites, and distinct environments are tracked as orthogonal evidence."""
+    engine = temp_memory_engine
+
+    pattern = SemanticPattern(
+        pattern_id="pat_orthogonal_evidence",
+        pattern_type="convention",
+        repo_identifier="service_main",
+        topic="evidence_dimensions",
+        title="Orthogonal Evidence Tracking",
+        content="Validating across distinct runs, suites, and environments.",
+        tags=["evidence", "orthogonal"],
+        confidence=0.75,
+        scope="repository",
+    )
+    engine.semantic_store.store_pattern(pattern)
+
+    # Dimension 1: Run 1 in service_main, unit test suite, posix sandbox
+    p1 = engine.semantic_store.record_reuse(
+        pattern_id="pat_orthogonal_evidence",
+        success=True,
+        repo_identifier="service_main",
+        run_id="run_001",
+        test_suite_id="suite_unit_tests",
+        environment="posix-sandbox",
+    )
+    assert p1.successful_reuses == 1
+    assert p1.get_independent_runs() == {"run_001"}
+    assert p1.get_independent_test_suites() == {"suite_unit_tests"}
+    assert p1.get_independent_environments() == {"posix-sandbox"}
+
+    # Dimension 2: Run 2 (different run ID!) in service_main, integration test suite (different suite!)
+    p2 = engine.semantic_store.record_reuse(
+        pattern_id="pat_orthogonal_evidence",
+        success=True,
+        repo_identifier="service_main",
+        run_id="run_002",
+        test_suite_id="suite_integration_tests",
+        environment="posix-sandbox",
+    )
+    assert p2.successful_reuses == 2
+    assert p2.get_independent_runs() == {"run_001", "run_002"}
+    assert p2.get_independent_test_suites() == {"suite_unit_tests", "suite_integration_tests"}
+
+    # Dimension 3: Run 3 in service_worker (different repo!), docker environment (different env!)
+    p3 = engine.semantic_store.record_reuse(
+        pattern_id="pat_orthogonal_evidence",
+        success=True,
+        repo_identifier="service_worker",
+        run_id="run_003",
+        test_suite_id="suite_e2e_tests",
+        environment="docker-microvm",
+    )
+    assert p3.successful_reuses == 3
+    assert p3.get_independent_runs() == {"run_001", "run_002", "run_003"}
+    assert p3.get_independent_environments() == {"posix-sandbox", "docker-microvm"}
+    assert set(p3.origin_repos) == {"service_main", "service_worker"}
+
+    # Verified across multiple runs and repos -> graduated to global with multi-dimensional proof!
+    assert p3.scope == "global"
+    assert p3.validation_count == 3
+
+

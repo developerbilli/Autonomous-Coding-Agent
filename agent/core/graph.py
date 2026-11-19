@@ -565,12 +565,19 @@ def manager_finalize_node(state: AgentState, config: Optional[RunnableConfig] = 
             evidence_tag = "unit_tests_passed" if task_succeeded else "verification_failed"
             repo_path = state.get("repo_path", "")
             repo_id = Path(repo_path).name if repo_path else "repo"
+            thread_id = state.get("thread_id", f"thread_{int(time.time())}")
+            test_res = state.get("test_results")
+            test_suite_sig = f"pytest_{getattr(test_res, 'exit_code', 0)}" if test_res else "default_suite"
+            env_name = "posix-sandbox"
             for pat_id in applied_pats:
                 mem_engine.semantic_store.record_reuse(
                     pattern_id=pat_id,
                     success=task_succeeded,
                     evidence=evidence_tag,
                     repo_identifier=repo_id,
+                    run_id=thread_id,
+                    test_suite_id=test_suite_sig,
+                    environment=env_name,
                 )
         except Exception as e:
             logger.warning(f"Could not record semantic pattern reuse: {e}")
